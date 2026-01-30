@@ -1,0 +1,63 @@
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.NewsletterController = void 0;
+const common_1 = require("@nestjs/common");
+const mailer_service_1 = require("../../common/mailer/mailer.service");
+const config_1 = require("@nestjs/config");
+let NewsletterController = class NewsletterController {
+    constructor(mailerService, configService) {
+        this.mailerService = mailerService;
+        this.configService = configService;
+    }
+    async subscribe(body) {
+        try {
+            const email = String(body.email || '').trim().toLowerCase();
+            const from = this.configService.get('EMAIL_FROM') || this.configService.get('SMTP_USER');
+            await this.mailerService.sendMail({
+                from: from,
+                to: email,
+                subject: 'Roots Maghreb Newsletter',
+                text: `Thanks for joining Roots Maghreb. We will reach out to you soon at ${email}.`,
+                html: `
+          <div style="font-family: Arial, sans-serif; color: #2c1810;">
+            <h2 style="color:#5d4037;">Welcome to Roots Maghreb</h2>
+            <p>Thanks for joining our newsletter.</p>
+            <p>We will reach out to you soon at <strong>${email}</strong>.</p>
+            <p style="margin-top:20px;">- Roots Maghreb</p>
+          </div>
+        `,
+            });
+            return { message: 'Subscribed' };
+        }
+        catch (err) {
+            console.error(err);
+            throw new common_1.InternalServerErrorException('Failed to subscribe');
+        }
+    }
+};
+exports.NewsletterController = NewsletterController;
+__decorate([
+    (0, common_1.Post)('newsletter/subscribe'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], NewsletterController.prototype, "subscribe", null);
+exports.NewsletterController = NewsletterController = __decorate([
+    (0, common_1.Controller)('api'),
+    __metadata("design:paramtypes", [mailer_service_1.MailerService,
+        config_1.ConfigService])
+], NewsletterController);
+//# sourceMappingURL=newsletter.controller.js.map

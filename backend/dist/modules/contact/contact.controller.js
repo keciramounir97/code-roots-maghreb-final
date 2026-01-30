@@ -1,0 +1,75 @@
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ContactController = void 0;
+const common_1 = require("@nestjs/common");
+const mailer_service_1 = require("../../common/mailer/mailer.service");
+const config_1 = require("@nestjs/config");
+const contact_dto_1 = require("./dto/contact.dto");
+let ContactController = class ContactController {
+    constructor(mailerService, configService) {
+        this.mailerService = mailerService;
+        this.configService = configService;
+    }
+    async sendContact(body) {
+        try {
+            const { name, email, message } = body;
+            const safeName = name;
+            const safeEmail = email;
+            const safeMessage = message ? message.replace(/\n/g, '<br>') : '';
+            const from = this.configService.get('EMAIL_FROM');
+            const to = this.configService.get('SMTP_USER');
+            await this.mailerService.sendMail({
+                from: from,
+                to: to,
+                replyTo: email,
+                subject: `New Contact Message from ${name}`,
+                text: `
+          Name: ${name}
+          Email: ${email}
+          Message:
+          ${message}
+        `,
+                html: `
+          <h3>New Contact Message</h3>
+          <p><strong>Name:</strong> ${safeName}</p>
+          <p><strong>Email:</strong> ${safeEmail}</p>
+          <p><strong>Message:</strong></p>
+          <blockquote style="background:#f9f9f9; padding:10px; border-left:4px solid #ccc;">
+            ${safeMessage}
+          </blockquote>
+        `,
+            });
+            return { message: 'Message sent successfully' };
+        }
+        catch (err) {
+            console.error(err);
+            throw new common_1.InternalServerErrorException('Failed to send message');
+        }
+    }
+};
+exports.ContactController = ContactController;
+__decorate([
+    (0, common_1.Post)('contact'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [contact_dto_1.ContactDto]),
+    __metadata("design:returntype", Promise)
+], ContactController.prototype, "sendContact", null);
+exports.ContactController = ContactController = __decorate([
+    (0, common_1.Controller)('api'),
+    __metadata("design:paramtypes", [mailer_service_1.MailerService,
+        config_1.ConfigService])
+], ContactController);
+//# sourceMappingURL=contact.controller.js.map
