@@ -46,6 +46,8 @@ let TreesService = class TreesService {
         return Tree_1.Tree.query(this.knex)
             .where('user_id', userId)
             .orderBy('created_at', 'desc')
+            .withGraphFetched('owner')
+            .modifyGraph('owner', (builder) => builder.select('id', 'full_name', 'email'))
             .withGraphFetched('people');
     }
     async listAdmin() {
@@ -61,7 +63,9 @@ let TreesService = class TreesService {
         return tree;
     }
     async create(data, userId, file) {
-        if (!data.title) {
+        var _a;
+        const title = (_a = data.title) !== null && _a !== void 0 ? _a : data.name;
+        if (!title) {
             throw new common_1.BadRequestException('Title is required');
         }
         const isPublic = data.isPublic === 'true' || data.isPublic === true;
@@ -72,8 +76,8 @@ let TreesService = class TreesService {
             (0, file_utils_1.safeMoveFile)(src, dest);
             gedcomPath = `private/trees/${file.filename}`;
         }
-        const newTree = await Tree_1.Tree.query(this.knex).insert({
-            title: data.title,
+        const newTree = await Tree_1.Tree.query(this.knex).insertAndFetch({
+            title,
             description: data.description,
             archive_source: data.archiveSource,
             document_code: data.documentCode,
@@ -84,25 +88,32 @@ let TreesService = class TreesService {
         if (gedcomPath) {
             await this.rebuildPeople(newTree.id, gedcomPath);
         }
-        await this.activityService.log(userId, 'trees', `Created tree: ${data.title}`);
+        await this.activityService.log(userId, 'trees', `Created tree: ${title}`);
         return newTree;
     }
     async update(id, data, userId, userRole, file) {
+        var _a;
         const tree = await this.findOne(id);
-        if (userRole !== 1 && userRole !== 3 && tree.user_id !== userId) {
+        const roleId = Number(userRole !== null && userRole !== void 0 ? userRole : 0);
+        const isAdmin = roleId === 1 || roleId === 3;
+        const isOwner = tree.user_id === userId;
+        if (!isAdmin && !isOwner) {
             throw new common_1.ForbiddenException('Forbidden');
         }
         const updateData = {};
-        if (data.title)
-            updateData.title = data.title;
+        const title = (_a = data.title) !== null && _a !== void 0 ? _a : data.name;
+        if (title)
+            updateData.title = title;
         if (data.description !== undefined)
             updateData.description = data.description;
         if (data.archiveSource !== undefined)
             updateData.archive_source = data.archiveSource;
         if (data.documentCode !== undefined)
             updateData.document_code = data.documentCode;
-        const isPublic = data.isPublic !== undefined ? (data.isPublic === 'true' || data.isPublic === true) : tree.is_public;
-        updateData.is_public = isPublic;
+        const isPublic = data.isPublic !== undefined
+            ? (data.isPublic === 'true' || data.isPublic === true || data.isPublic === 1)
+            : !!tree.is_public;
+        updateData.is_public = Boolean(isPublic);
         let gedcomPath = tree.gedcom_path;
         if (file) {
             if (tree.gedcom_path)
@@ -144,7 +155,10 @@ let TreesService = class TreesService {
     }
     async delete(id, userId, userRole) {
         const tree = await this.findOne(id);
-        if (userRole !== 1 && userRole !== 3 && tree.user_id !== userId) {
+        const roleId = Number(userRole !== null && userRole !== void 0 ? userRole : 0);
+        const isAdmin = roleId === 1 || roleId === 3;
+        const isOwner = tree.user_id === userId;
+        if (!isAdmin && !isOwner) {
             throw new common_1.ForbiddenException('Forbidden');
         }
         if (tree.gedcom_path)
@@ -214,10 +228,11 @@ let TreesService = class TreesService {
             }
             let people = [];
             try {
-                people = this.parseGedcomPeople(fs.readFileSync(filePath, 'utf8'));
+                people = this.parseGedcomPeople(fs.readFileSync(filePath, 'utf8')) || [];
             }
-            catch (e) {
-                people = [];
+            catch (parseErr) {
+                console.warn('GEDCOM parse failed, keeping existing people:', parseErr === null || parseErr === void 0 ? void 0 : parseErr.message);
+                return;
             }
             await Person_1.Person.query(this.knex).delete().where('tree_id', treeId);
             if (!people.length)

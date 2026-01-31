@@ -22,10 +22,12 @@ let SearchService = class SearchService {
         this.knex = knex;
     }
     async search(query, user) {
+        var _a, _b, _c;
         if (!query)
             return { books: [], trees: [], people: [] };
         const q = query.trim();
-        const canSeeAllTrees = user && (user.roleName === 'admin' || user.roleName === 'super_admin' || user.role_id === 1);
+        const roleId = Number((_c = (_b = (_a = user === null || user === void 0 ? void 0 : user.role_id) !== null && _a !== void 0 ? _a : user === null || user === void 0 ? void 0 : user.roleId) !== null && _b !== void 0 ? _b : user === null || user === void 0 ? void 0 : user.role) !== null && _c !== void 0 ? _c : 0);
+        const canSeeAllTrees = user && (roleId === 1 || roleId === 3 || user.roleName === 'admin' || user.roleName === 'super_admin');
         const books = await Book_1.Book.query(this.knex)
             .where('is_public', true)
             .andWhere((builder) => {
@@ -53,7 +55,9 @@ let SearchService = class SearchService {
                 treeQuery.where('is_public', true);
             }
         }
-        const trees = await treeQuery.orderBy('title', 'asc').limit(20).withGraphFetched('owner');
+        const trees = await treeQuery.orderBy('title', 'asc').limit(20)
+            .withGraphFetched('owner')
+            .modifyGraph('owner', (builder) => builder.select('id', 'full_name'));
         const peopleQuery = Person_1.Person.query(this.knex)
             .joinRelated('tree')
             .where('name', 'like', `%${q}%`);
@@ -70,7 +74,8 @@ let SearchService = class SearchService {
         const people = await peopleQuery
             .orderBy('name', 'asc')
             .limit(30)
-            .withGraphFetched('tree.owner');
+            .withGraphFetched('tree.owner')
+            .modifyGraph('tree.owner', (builder) => builder.select('id', 'full_name'));
         return {
             books,
             trees: trees.map((t) => {

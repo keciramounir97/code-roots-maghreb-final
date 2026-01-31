@@ -62,7 +62,7 @@ let GalleryService = class GalleryService {
         }
         const isPublic = data.isPublic === 'true' || data.isPublic === true;
         const imagePath = `/uploads/gallery/${file.filename}`;
-        const newItem = await Gallery_1.Gallery.query(this.knex).insert({
+        const newItem = await Gallery_1.Gallery.query(this.knex).insertAndFetch({
             title: data.title,
             description: data.description,
             image_path: imagePath,
@@ -81,7 +81,10 @@ let GalleryService = class GalleryService {
     }
     async update(id, data, userId, userRole, file) {
         const item = await this.findOne(id);
-        if (userRole !== 1 && userRole !== 3 && item.uploaded_by !== userId) {
+        const roleId = Number(userRole !== null && userRole !== void 0 ? userRole : 0);
+        const isAdmin = roleId === 1 || roleId === 3;
+        const isOwner = item.uploaded_by === userId;
+        if (!isAdmin && !isOwner) {
             throw new common_1.ForbiddenException('Forbidden');
         }
         const updateData = {};
@@ -99,8 +102,10 @@ let GalleryService = class GalleryService {
             updateData.year = data.year;
         if (data.photographer !== undefined)
             updateData.photographer = data.photographer;
-        const isPublic = data.isPublic !== undefined ? (data.isPublic === 'true' || data.isPublic === true) : item.is_public;
-        updateData.is_public = isPublic;
+        const isPublic = data.isPublic !== undefined
+            ? (data.isPublic === 'true' || data.isPublic === true || data.isPublic === 1)
+            : !!item.is_public;
+        updateData.is_public = Boolean(isPublic);
         if (file) {
             if (item.image_path)
                 (0, file_utils_1.safeUnlink)((0, file_utils_1.resolveStoredFilePath)(item.image_path));
@@ -112,7 +117,10 @@ let GalleryService = class GalleryService {
     }
     async delete(id, userId, userRole) {
         const item = await this.findOne(id);
-        if (userRole !== 1 && userRole !== 3 && item.uploaded_by !== userId) {
+        const roleId = Number(userRole !== null && userRole !== void 0 ? userRole : 0);
+        const isAdmin = roleId === 1 || roleId === 3;
+        const isOwner = item.uploaded_by === userId;
+        if (!isAdmin && !isOwner) {
             throw new common_1.ForbiddenException('Forbidden');
         }
         if (item.image_path)

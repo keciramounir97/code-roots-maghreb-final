@@ -17,7 +17,7 @@ export default function ActivityLog() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const isDark = theme === "dark";
-  const isAdmin = user?.role === 1;
+  const isAdmin = user?.role === 1 || user?.role === 3;
 
   const [q, setQ] = useState("");
   const [type, setType] = useState("all");
@@ -40,7 +40,7 @@ export default function ActivityLog() {
         try {
           setLoading(true);
           setError("");
-          const { data } = await api.get(isAdmin ? "/admin/activity" : "/activity", {
+          const { data } = await api.get("/activity", {
             params: {
               q,
               type,
@@ -64,7 +64,7 @@ export default function ActivityLog() {
       active = false;
       clearTimeout(handle);
     };
-  }, [q, type, isAdmin]);
+  }, [q, type]);
 
   const iconFor = useMemo(
     () => (t) => {
@@ -160,7 +160,7 @@ export default function ActivityLog() {
                 <tr>
                   <td colSpan={4} className="py-10 text-center">
                     <div className="text-[#a0552a] font-semibold">{error}</div>
-                    {isAdmin ? (
+                    {!isAdmin ? (
                       <div className="text-sm opacity-70 mt-2">
                         {t("admin_required", "This page requires an admin account.")}
                       </div>

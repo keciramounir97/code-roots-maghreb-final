@@ -31,4 +31,6 @@ export declare class RefreshToken extends BaseModel {
             };
         };
     };
+    $beforeInsert(): void;
+    $beforeUpdate(): void;
 }

@@ -1,4 +1,3 @@
-
 import {
     ExceptionFilter,
     Catch,
@@ -29,22 +28,32 @@ export class AllExceptionsFilter implements ExceptionFilter {
                 : 'Internal server error';
 
         // Extract message string if object
-        const errorMessage = typeof message === 'object' && (message as any).message
-            ? (message as any).message
+        const errorMessage = typeof message === 'object' && (message as Record<string, unknown>)?.message
+            ? (message as Record<string, unknown>).message
             : message;
 
-        this.logger.error(
-            `HTTP ${status} Error: ${errorMessage}`,
-            exception instanceof Error ? exception.stack : ''
-        );
+        const requestId = (request as Request & { id?: string }).id || '-';
 
+        // Production: avoid logging full stack to stdout (use structured logging in production)
+        const isProduction = process.env.NODE_ENV === 'production';
+        this.logger.error(
+            `[${requestId}] HTTP ${status} - ${Array.isArray(errorMessage) ? errorMessage[0] : errorMessage}`,
+        );
+        if (!isProduction && exception instanceof Error) {
+            this.logger.debug(exception.stack);
+        }
+
+        if (requestId !== '-') {
+            response.setHeader('X-Request-Id', requestId);
+        }
         response.status(status).json({
             statusCode: status,
-            message: Array.isArray(errorMessage) ? errorMessage[0] : errorMessage, // consistent string
+            message: Array.isArray(errorMessage) ? errorMessage[0] : errorMessage,
             data: null,
             error: typeof message === 'object' ? message : { message },
             timestamp: new Date().toISOString(),
             path: request.url,
+            ...(requestId !== '-' && { requestId }),
         });
     }
 }

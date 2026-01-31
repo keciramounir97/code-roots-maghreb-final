@@ -9,6 +9,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ActivityModule = void 0;
 const common_1 = require("@nestjs/common");
 const activity_service_1 = require("./activity.service");
+const activity_controller_1 = require("./activity.controller");
 let ActivityModule = class ActivityModule {
 };
 exports.ActivityModule = ActivityModule;
@@ -16,6 +17,7 @@ exports.ActivityModule = ActivityModule = __decorate([
     (0, common_1.Global)(),
     (0, common_1.Module)({
         providers: [activity_service_1.ActivityService],
+        controllers: [activity_controller_1.ActivityController],
         exports: [activity_service_1.ActivityService],
     })
 ], ActivityModule);

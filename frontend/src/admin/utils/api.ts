@@ -17,7 +17,7 @@ export const fetchStats = async () => {
 
 export const fetchRecentActivity = async () => {
   try {
-    const { data } = await api.get("/admin/activity");
+    const { data } = await api.get("/activity");
     return data;
   } catch (err) {
     console.error("Failed to fetch recent activity", err);

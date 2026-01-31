@@ -5,8 +5,8 @@ export declare class PersonsController {
     private readonly knex;
     constructor(treesService: TreesService, knex: any);
     private ensureTreeAccess;
-    listPublicPeople(treeId: string): Promise<Person[]>;
-    getPublicPerson(id: string): Promise<{
+    listPublicPeople(treeId: number): Promise<Person[]>;
+    getPublicPerson(id: number): Promise<{
         id: number;
         name: string;
         tree: {
@@ -14,8 +14,8 @@ export declare class PersonsController {
             title: string;
         };
     }>;
-    listMyPeople(treeId: string, req: any): Promise<Person[]>;
-    getMyPerson(id: string, req: any): Promise<{
+    listMyPeople(treeId: number, req: any): Promise<Person[]>;
+    getMyPerson(id: number, req: any): Promise<{
         id: number;
         name: string;
         tree: {
@@ -23,13 +23,13 @@ export declare class PersonsController {
             title: string;
         };
     }>;
-    createMyPerson(treeId: string, body: any, req: any): Promise<{
+    createMyPerson(treeId: number, body: any, req: any): Promise<{
         id: number;
     }>;
-    updateMyPerson(treeId: string, id: string, body: any, req: any): Promise<{
+    updateMyPerson(treeId: number, id: number, body: any, req: any): Promise<{
         id: number;
     }>;
-    deleteMyPerson(treeId: string, id: string, req: any): Promise<{
+    deleteMyPerson(treeId: number, id: number, req: any): Promise<{
         message: string;
     }>;
 }

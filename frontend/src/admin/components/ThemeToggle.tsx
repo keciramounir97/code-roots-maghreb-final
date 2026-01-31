@@ -1,34 +1,28 @@
 import { useThemeStore } from "../../store/theme";
 import { Moon, Sun } from "lucide-react";
 
-export default function ThemeToggle({ className = "" }) {
+export default function ThemeToggle({ className = "" }: { className?: string }) {
   const { theme, toggleTheme } = useThemeStore();
   const isDark = theme === "dark";
-
-  const bg = isDark ? "bg-[#3e2723]" : "bg-white";
-  const text = isDark ? "text-[#f8f5ef]" : "text-[#3e2723]";
-  const border = isDark ? "border-[#2c1810]" : "border-[#e8dfca]";
-  const hover = isDark ? "hover:bg-white/10" : "hover:bg-[#5d4037]/8";
 
   return (
     <button
       onClick={toggleTheme}
-      className={`px-3 py-2 rounded-md flex items-center gap-2 border 
-      transition-all hover:opacity-95 active:scale-[0.97]
-      ${bg} ${text} ${border} ${hover} ${className}`}
+      className={`relative flex items-center justify-between gap-3 transition-all duration-200 outline-none group ${className}`}
       aria-label="toggle-theme"
       type="button"
       title={isDark ? "Switch to light" : "Switch to dark"}
     >
-      {isDark ? (
-        <Sun className="w-4 h-4 text-[#d4af37]" />
-      ) : (
-        <Moon className="w-4 h-4 text-[#5d4037]" />
-      )}
-
-      <span className="text-sm font-medium">
-        {isDark ? "Light" : "Dark"}
-      </span>
+      <div className="flex items-center gap-2">
+        {isDark ? (
+          <Sun className="w-4 h-4 text-accent-gold" />
+        ) : (
+          <Moon className="w-4 h-4 text-primary-brown" />
+        )}
+        <span className={`text-sm font-medium ${isDark ? "text-gray-300 group-hover:text-white" : "text-secondary-brown group-hover:text-primary-brown"}`}>
+          {isDark ? "Light Mode" : "Dark Mode"}
+        </span>
+      </div>
     </button>
   );
 }

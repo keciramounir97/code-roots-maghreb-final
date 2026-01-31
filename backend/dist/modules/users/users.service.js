@@ -29,38 +29,57 @@ let UsersService = class UsersService {
     }
     async findAll() {
         return User_1.User.query(this.knex)
-            .select('users.id', 'users.full_name as fullName', 'users.phone_number as phoneNumber', 'users.email', 'users.role_id as roleId', 'users.status', 'users.created_at as createdAt', 'users.last_login as lastLogin', 'roles.name as roleName')
+            .select('users.id', 'users.full_name as fullName', 'users.phone_number as phoneNumber', 'users.email', 'users.role_id as roleId', 'users.status', 'users.created_at as createdAt', 'users.last_login as lastLogin', 'role.name as roleName')
             .joinRelated('role')
             .orderBy('users.created_at', 'desc')
             .limit(100);
     }
     async findOne(id) {
-        const user = await User_1.User.query(this.knex)
-            .findById(id)
-            .select('users.id', 'users.full_name as fullName', 'users.phone_number as phoneNumber', 'users.email', 'users.role_id as roleId', 'users.status', 'users.created_at as createdAt', 'users.last_login as lastLogin', 'roles.name as roleName')
-            .joinRelated('role');
-        if (!user)
+        var _a, _b;
+        const row = await this.knex('users')
+            .select('users.id', 'users.full_name as fullName', 'users.phone_number as phoneNumber', 'users.email', 'users.role_id', 'users.role_id as roleId', 'users.status', 'users.created_at as createdAt', 'users.last_login as lastLogin', 'roles.name as roleName')
+            .leftJoin('roles', 'users.role_id', 'roles.id')
+            .where('users.id', id)
+            .first();
+        if (!row)
             throw new common_1.NotFoundException('User not found');
-        return user;
+        row.role_id = (_a = row.role_id) !== null && _a !== void 0 ? _a : row.roleId;
+        row.roleId = (_b = row.roleId) !== null && _b !== void 0 ? _b : row.role_id;
+        return row;
     }
     async findByEmail(email) {
         return User_1.User.query(this.knex).findOne({ email });
     }
     async create(data, adminId) {
+        var _a, _b;
         const existing = await this.findByEmail(data.email);
         if (existing)
             throw new common_1.BadRequestException('Email already registered');
-        const randomPassword = crypto.randomBytes(24).toString('hex');
-        const passwordHash = await bcrypt.hash(randomPassword, 10);
-        const newUser = await User_1.User.query(this.knex).insert({
+        let passwordHash;
+        if (adminId != null) {
+            const randomPassword = crypto.randomBytes(24).toString('hex');
+            passwordHash = await bcrypt.hash(randomPassword, 10);
+        }
+        else {
+            if (!data.password || String(data.password).length < 6) {
+                throw new common_1.BadRequestException('Password must be at least 6 characters');
+            }
+            passwordHash = await bcrypt.hash(data.password, 10);
+        }
+        const newUser = await User_1.User.query(this.knex).insertAndFetch({
             full_name: data.fullName || data.full_name,
-            phone_number: data.phone || data.phoneNumber || data.phone_number,
+            phone_number: data.phone || data.phoneNumber || data.phone_number || null,
             email: data.email,
             password: passwordHash,
-            role_id: data.roleId || data.role_id || 2,
+            role_id: (_b = (_a = data.roleId) !== null && _a !== void 0 ? _a : data.role_id) !== null && _b !== void 0 ? _b : 2,
             status: 'active',
         });
-        await this.activityService.log(adminId, 'users', `Created user: ${data.email}`);
+        if (adminId != null) {
+            await this.activityService.log(adminId, 'users', `Created user: ${data.email}`);
+        }
+        else {
+            await this.activityService.log(newUser.id, 'users', `Signed up: ${data.email}`);
+        }
         return newUser;
     }
     async update(id, data, adminId) {

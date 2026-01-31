@@ -1,9 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ActivityLog = void 0;
-const BaseModel_1 = require("./BaseModel");
 const objection_1 = require("objection");
-class ActivityLog extends BaseModel_1.BaseModel {
+class ActivityLog extends objection_1.Model {
+    $beforeInsert() {
+        this.created_at = new Date().toISOString().slice(0, 19).replace('T', ' ');
+    }
 }
 exports.ActivityLog = ActivityLog;
 ActivityLog.tableName = 'activity_logs';

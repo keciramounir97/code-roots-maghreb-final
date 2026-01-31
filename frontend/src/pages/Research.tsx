@@ -287,9 +287,8 @@ export default function Research() {
                   "search_placeholder",
                   "Search ancestors, archives, regions..."
                 )}
-                className={`w-full pl-10 py-3 rounded-md bg-transparent border ${sectionBorder} outline-none ${
-                  theme === "dark" ? "text-white" : "text-[#2c1810]"
-                }`}
+                className={`w-full pl-10 py-3 rounded-md bg-transparent border ${sectionBorder} outline-none ${theme === "dark" ? "text-white" : "text-[#2c1810]"
+                  }`}
               />
             </div>
             <button

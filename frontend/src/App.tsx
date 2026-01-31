@@ -12,6 +12,7 @@ const Home = lazy(() => import("./pages/home"));
 const GalleryPage = lazy(() => import("./pages/Gallery"));
 const Periods = lazy(() => import("./pages/periods"));
 const SourcesAndArchives = lazy(() => import("./pages/SourcesAndArchives"));
+const ContactUs = lazy(() => import("./pages/contactUs"));
 
 // ===== LAZY LOADED AUTH PAGES =====
 const Login = lazy(() => import("./pages/login"));
@@ -38,10 +39,14 @@ const ActivityLog = lazy(() => import("./admin/pages/ActivityLog"));
  */
 const LoadingFallback = memo(function LoadingFallback() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#f5f1e8] dark:bg-[#1a0f0a]">
+    <div className="min-h-screen flex items-center justify-center bg-light-beige dark:bg-[#1a0f0a]">
       <div className="text-center">
-        <div className="w-16 h-16 border-4 border-[#d4af37] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-        <p className="text-[#5d4037] dark:text-[#d4af37] font-cinzel text-lg">
+        <div className="relative w-20 h-20 mx-auto mb-6">
+          <div className="absolute inset-0 border-2 border-primary-brown/20 dark:border-accent-gold/20 rounded-full" />
+          <div className="absolute inset-0 border-2 border-transparent border-t-accent-gold rounded-full animate-spin" />
+          <div className="absolute inset-2 border-2 border-transparent border-b-primary-brown/40 dark:border-b-accent-gold/40 rounded-full animate-spin" style={{ animationDirection: "reverse", animationDuration: "1.5s" }} />
+        </div>
+        <p className="text-primary-brown dark:text-accent-gold font-cinzel text-lg tracking-widest">
           Loading...
         </p>
       </div>
@@ -55,7 +60,7 @@ const LoadingFallback = memo(function LoadingFallback() {
 const AdminLoadingFallback = memo(function AdminLoadingFallback() {
   return (
     <div className="flex items-center justify-center p-8">
-      <div className="w-8 h-8 border-3 border-[#d4af37] border-t-transparent rounded-full animate-spin" />
+      <div className="w-8 h-8 border-3 border-accent-gold border-t-transparent rounded-full animate-spin" />
     </div>
   );
 });
@@ -93,6 +98,7 @@ function App() {
           <Route path="/sources" element={<SourcesAndArchives />} />
           <Route path="/access-reliability" element={<SourcesAndArchives />} />
           <Route path="/sourcesandarchives" element={<SourcesAndArchives />} />
+          <Route path="/contact" element={<ContactUs />} />
 
           {/* ===== AUTH ROUTES ===== */}
           <Route path="/login" element={<Login />} />

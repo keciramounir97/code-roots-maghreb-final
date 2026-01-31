@@ -8,6 +8,9 @@ export declare class GalleryController {
     listMy(req: any): Promise<import("../../models/Gallery").Gallery[]>;
     getMy(id: number, req: any): Promise<import("../../models/Gallery").Gallery>;
     createMy(body: CreateGalleryDto, req: any, file: Express.Multer.File): Promise<import("../../models/Gallery").Gallery>;
+    saveMy(id: number, body: UpdateGalleryDto, req: any, file?: Express.Multer.File): Promise<{
+        id: number;
+    }>;
     updateMy(id: number, body: UpdateGalleryDto, req: any, file?: Express.Multer.File): Promise<{
         id: number;
     }>;
@@ -17,6 +20,9 @@ export declare class GalleryController {
     listAdmin(): Promise<import("../../models/Gallery").Gallery[]>;
     getAdmin(id: number): Promise<import("../../models/Gallery").Gallery>;
     createAdmin(body: CreateGalleryDto, req: any, file: Express.Multer.File): Promise<import("../../models/Gallery").Gallery>;
+    saveAdmin(id: number, body: UpdateGalleryDto, req: any, file?: Express.Multer.File): Promise<{
+        id: number;
+    }>;
     updateAdmin(id: number, body: UpdateGalleryDto, req: any, file?: Express.Multer.File): Promise<{
         id: number;
     }>;

@@ -1,0 +1,54 @@
+ROOTS MAGHREB - ROUTE AUDIT FINAL
+=================================
+All routes return 200-ish. Production & cPanel safe.
+CORS: rootsmaghreb.com, server.rootsmaghreb.com
+Document code & archive sources: saved with tree card and image.
+
+Route                                             Status
+------------------------------------------------------------
+OPTIONS (CORS https://rootsmaghreb.com)           204 ✓
+OPTIONS (CORS https://server.rootsmaghreb.com)    204 ✓
+GET /health                                       200 ✓
+GET /trees                                        200 ✓
+GET /books                                        200 ✓
+GET /gallery                                      200 ✓
+GET /search?q=x                                   200 ✓
+POST /auth/login                                  200 ✓
+POST /auth/signup                                 201 ✓
+POST /auth/reset                                  200 ✓
+GET /auth/me                                      200 ✓
+POST /auth/refresh                                200 ✓
+POST /auth/logout                                 200 ✓
+GET /my/trees                                     200 ✓
+POST /my/trees                                    201 ✓
+GET /my/trees/32                                  200 ✓
+GET /my/trees/32/people                           200 ✓
+PUT /my/trees/32                                  200 ✓
+POST /my/trees/32/save                            201 ✓
+GET /my/books                                     200 ✓
+GET /my/gallery                                   200 ✓
+POST /my/gallery (image)                          201 ✓
+GET /my/gallery/16                                200 ✓
+GET /uploads (image)                              200 ✓
+PUT /my/gallery/16                                200 ✓
+DELETE /my/gallery/16                             200 ✓
+GET /trees/2                                      200 ✓
+GET /trees/2/people                               200 ✓
+GET /people/38                                    200 ✓
+GET /admin/users                                  200 ✓
+GET /admin/books                                  200 ✓
+GET /admin/trees                                  200 ✓
+GET /admin/gallery                                200 ✓
+GET /admin/stats                                  200 ✓
+GET /admin/users/1                                200 ✓
+GET /admin/trees/32                               200 ✓
+GET /activity                                     200 ✓
+POST /admin/users                                 201 ✓
+PATCH /admin/users/61                             200 ✓
+DELETE /admin/users/61                            200 ✓
+POST /newsletter/subscribe                        201 ✓
+POST /contact                                     201 ✓
+------------------------------------------------------------
+42/42 passed - ALL 200-ish
+
+Generated: 2026-01-31T15:52:28.259Z

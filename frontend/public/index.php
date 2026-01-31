@@ -1,14 +1,12 @@
 <?php
 /**
- * Roots Maghreb - Node.js Backend Redirect
+ * Roots Maghreb - SPA Redirect
  * 
- * This file exists because Apache is trying to find a PHP file.
- * However, this is a Node.js application running via Passenger.
- * 
- * The actual application is served by server.js (Node.js).
+ * This file exists because Apache may try to find a PHP file.
+ * Redirect to the SPA home page. The .htaccess will serve index.html
+ * for the React app. Do NOT redirect to /health - that is a backend
+ * API endpoint and causes 404 in the frontend.
  */
-
-// Redirect to Node.js health check
-header('Location: /health');
+header('Location: /');
 exit;
 ?>

@@ -26,7 +26,7 @@ export class UsersService {
                 'users.status',
                 'users.created_at as createdAt',
                 'users.last_login as lastLogin',
-                'roles.name as roleName'
+                'role.name as roleName'
             )
             .joinRelated('role')
             .orderBy('users.created_at', 'desc')
@@ -34,48 +34,66 @@ export class UsersService {
     }
 
     async findOne(id: number) {
-        const user = await User.query(this.knex)
-            .findById(id)
+        const row = await this.knex('users')
             .select(
                 'users.id',
                 'users.full_name as fullName',
                 'users.phone_number as phoneNumber',
                 'users.email',
+                'users.role_id',
                 'users.role_id as roleId',
                 'users.status',
                 'users.created_at as createdAt',
                 'users.last_login as lastLogin',
                 'roles.name as roleName'
             )
-            .joinRelated('role');
+            .leftJoin('roles', 'users.role_id', 'roles.id')
+            .where('users.id', id)
+            .first();
 
-        if (!user) throw new NotFoundException('User not found');
-        return user;
+        if (!row) throw new NotFoundException('User not found');
+        // Ensure role_id/roleId for guards (some expect role_id, some roleId)
+        row.role_id = row.role_id ?? row.roleId;
+        row.roleId = row.roleId ?? row.role_id;
+        return row;
     }
 
     async findByEmail(email: string) {
         return User.query(this.knex).findOne({ email });
     }
 
-    async create(data: any, adminId: number) {
+    async create(data: any, adminId: number | null) {
         const existing = await this.findByEmail(data.email);
         if (existing) throw new BadRequestException('Email already registered');
 
-        const randomPassword = crypto.randomBytes(24).toString('hex');
-        const passwordHash = await bcrypt.hash(randomPassword, 10);
+        let passwordHash: string;
+        if (adminId != null) {
+            // Admin creating user: generate random password (user must reset)
+            const randomPassword = crypto.randomBytes(24).toString('hex');
+            passwordHash = await bcrypt.hash(randomPassword, 10);
+        } else {
+            // Self-signup: use provided password
+            if (!data.password || String(data.password).length < 6) {
+                throw new BadRequestException('Password must be at least 6 characters');
+            }
+            passwordHash = await bcrypt.hash(data.password, 10);
+        }
 
-        const newUser = await User.query(this.knex).insert({
+        const newUser = await User.query(this.knex).insertAndFetch({
             full_name: data.fullName || data.full_name,
-            phone_number: data.phone || data.phoneNumber || data.phone_number,
+            phone_number: data.phone || data.phoneNumber || data.phone_number || null,
             email: data.email,
             password: passwordHash,
-            role_id: data.roleId || data.role_id || 2,
+            role_id: data.roleId ?? data.role_id ?? 2,
             status: 'active',
         });
 
-        await this.activityService.log(adminId, 'users', `Created user: ${data.email}`);
+        if (adminId != null) {
+            await this.activityService.log(adminId, 'users', `Created user: ${data.email}`);
+        } else {
+            await this.activityService.log(newUser.id, 'users', `Signed up: ${data.email}`);
+        }
 
-        // In a real scenario, we'd trigger a reset code here.
         return newUser;
     }
 

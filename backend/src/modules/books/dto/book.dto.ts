@@ -16,7 +16,22 @@ export class CreateBookDto {
 
     @IsString()
     @IsOptional()
+    category?: string;
+
+    @IsString()
+    @IsOptional()
+    archiveSource?: string;
+
+    @IsString()
+    @IsOptional()
+    documentCode?: string;
+
+    @IsString()
+    @IsOptional()
     publication_year?: string;
+
+    @IsOptional()
+    isPublic?: boolean | string;
 }
 
 export class UpdateBookDto {
@@ -34,5 +49,20 @@ export class UpdateBookDto {
 
     @IsString()
     @IsOptional()
+    category?: string;
+
+    @IsString()
+    @IsOptional()
+    archiveSource?: string;
+
+    @IsString()
+    @IsOptional()
+    documentCode?: string;
+
+    @IsString()
+    @IsOptional()
     publication_year?: string;
+
+    @IsOptional()
+    isPublic?: boolean | string;
 }

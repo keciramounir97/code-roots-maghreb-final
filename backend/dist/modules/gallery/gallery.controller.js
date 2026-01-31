@@ -43,11 +43,20 @@ let GalleryController = class GalleryController {
         const item = await this.galleryService.create(body, req.user.id, file);
         return item;
     }
+    async saveMy(id, body, req, file) {
+        var _a, _b, _c, _d, _e;
+        const userRole = (_d = (_b = (_a = req.user) === null || _a === void 0 ? void 0 : _a.role_id) !== null && _b !== void 0 ? _b : (_c = req.user) === null || _c === void 0 ? void 0 : _c.roleId) !== null && _d !== void 0 ? _d : (_e = req.user) === null || _e === void 0 ? void 0 : _e.role;
+        return this.galleryService.update(id, body, req.user.id, userRole, file);
+    }
     async updateMy(id, body, req, file) {
-        return this.galleryService.update(id, body, req.user.id, req.user.role_id, file);
+        var _a, _b, _c, _d, _e;
+        const userRole = (_d = (_b = (_a = req.user) === null || _a === void 0 ? void 0 : _a.role_id) !== null && _b !== void 0 ? _b : (_c = req.user) === null || _c === void 0 ? void 0 : _c.roleId) !== null && _d !== void 0 ? _d : (_e = req.user) === null || _e === void 0 ? void 0 : _e.role;
+        return this.galleryService.update(id, body, req.user.id, userRole, file);
     }
     async deleteMy(id, req) {
-        await this.galleryService.delete(id, req.user.id, req.user.role_id);
+        var _a, _b, _c, _d, _e;
+        const userRole = (_d = (_b = (_a = req.user) === null || _a === void 0 ? void 0 : _a.role_id) !== null && _b !== void 0 ? _b : (_c = req.user) === null || _c === void 0 ? void 0 : _c.roleId) !== null && _d !== void 0 ? _d : (_e = req.user) === null || _e === void 0 ? void 0 : _e.role;
+        await this.galleryService.delete(id, req.user.id, userRole);
         return { message: "Deleted successfully" };
     }
     async listAdmin() {
@@ -59,11 +68,20 @@ let GalleryController = class GalleryController {
     async createAdmin(body, req, file) {
         return this.galleryService.create(body, req.user.id, file);
     }
+    async saveAdmin(id, body, req, file) {
+        var _a, _b, _c, _d, _e;
+        const userRole = (_d = (_b = (_a = req.user) === null || _a === void 0 ? void 0 : _a.role_id) !== null && _b !== void 0 ? _b : (_c = req.user) === null || _c === void 0 ? void 0 : _c.roleId) !== null && _d !== void 0 ? _d : (_e = req.user) === null || _e === void 0 ? void 0 : _e.role;
+        return this.galleryService.update(id, body, req.user.id, userRole, file);
+    }
     async updateAdmin(id, body, req, file) {
-        return this.galleryService.update(id, body, req.user.id, req.user.role_id, file);
+        var _a, _b, _c, _d, _e;
+        const userRole = (_d = (_b = (_a = req.user) === null || _a === void 0 ? void 0 : _a.role_id) !== null && _b !== void 0 ? _b : (_c = req.user) === null || _c === void 0 ? void 0 : _c.roleId) !== null && _d !== void 0 ? _d : (_e = req.user) === null || _e === void 0 ? void 0 : _e.role;
+        return this.galleryService.update(id, body, req.user.id, userRole, file);
     }
     async deleteAdmin(id, req) {
-        await this.galleryService.delete(id, req.user.id, req.user.role_id);
+        var _a, _b, _c, _d, _e;
+        const userRole = (_d = (_b = (_a = req.user) === null || _a === void 0 ? void 0 : _a.role_id) !== null && _b !== void 0 ? _b : (_c = req.user) === null || _c === void 0 ? void 0 : _c.roleId) !== null && _d !== void 0 ? _d : (_e = req.user) === null || _e === void 0 ? void 0 : _e.role;
+        await this.galleryService.delete(id, req.user.id, userRole);
         return { message: "Deleted successfully" };
     }
 };
@@ -107,7 +125,7 @@ __decorate([
     __param(2, (0, common_1.UploadedFile)(new common_1.ParseFilePipe({
         validators: [
             new common_1.MaxFileSizeValidator({ maxSize: 10 * 1024 * 1024 }),
-            new common_1.FileTypeValidator({ fileType: /(jpg|jpeg|png|webp|gif)$/ }),
+            new common_1.FileTypeValidator({ fileType: /^image\/(jpe?g|png|webp|gif)$/i, skipMagicNumbersValidation: true }),
         ],
         fileIsRequired: true
     }))),
@@ -115,6 +133,24 @@ __decorate([
     __metadata("design:paramtypes", [gallery_dto_1.CreateGalleryDto, Object, Object]),
     __metadata("design:returntype", Promise)
 ], GalleryController.prototype, "createMy", null);
+__decorate([
+    (0, common_1.Post)('my/gallery/:id/save'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('image')),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
+    __param(3, (0, common_1.UploadedFile)(new common_1.ParseFilePipe({
+        validators: [
+            new common_1.MaxFileSizeValidator({ maxSize: 10 * 1024 * 1024 }),
+            new common_1.FileTypeValidator({ fileType: /^image\/(jpe?g|png|webp|gif)$/i, skipMagicNumbersValidation: true }),
+        ],
+        fileIsRequired: false
+    }))),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, gallery_dto_1.UpdateGalleryDto, Object, Object]),
+    __metadata("design:returntype", Promise)
+], GalleryController.prototype, "saveMy", null);
 __decorate([
     (0, common_1.Put)('my/gallery/:id'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
@@ -125,7 +161,7 @@ __decorate([
     __param(3, (0, common_1.UploadedFile)(new common_1.ParseFilePipe({
         validators: [
             new common_1.MaxFileSizeValidator({ maxSize: 10 * 1024 * 1024 }),
-            new common_1.FileTypeValidator({ fileType: /(jpg|jpeg|png|webp|gif)$/ }),
+            new common_1.FileTypeValidator({ fileType: /^image\/(jpe?g|png|webp|gif)$/i, skipMagicNumbersValidation: true }),
         ],
         fileIsRequired: false
     }))),
@@ -169,7 +205,7 @@ __decorate([
     __param(2, (0, common_1.UploadedFile)(new common_1.ParseFilePipe({
         validators: [
             new common_1.MaxFileSizeValidator({ maxSize: 10 * 1024 * 1024 }),
-            new common_1.FileTypeValidator({ fileType: /(jpg|jpeg|png|webp|gif)$/ }),
+            new common_1.FileTypeValidator({ fileType: /^image\/(jpe?g|png|webp|gif)$/i, skipMagicNumbersValidation: true }),
         ],
         fileIsRequired: true
     }))),
@@ -177,6 +213,25 @@ __decorate([
     __metadata("design:paramtypes", [gallery_dto_1.CreateGalleryDto, Object, Object]),
     __metadata("design:returntype", Promise)
 ], GalleryController.prototype, "createAdmin", null);
+__decorate([
+    (0, common_1.Post)('admin/gallery/:id/save'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('admin', 'super_admin'),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('image')),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
+    __param(3, (0, common_1.UploadedFile)(new common_1.ParseFilePipe({
+        validators: [
+            new common_1.MaxFileSizeValidator({ maxSize: 10 * 1024 * 1024 }),
+            new common_1.FileTypeValidator({ fileType: /^image\/(jpe?g|png|webp|gif)$/i, skipMagicNumbersValidation: true }),
+        ],
+        fileIsRequired: false
+    }))),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, gallery_dto_1.UpdateGalleryDto, Object, Object]),
+    __metadata("design:returntype", Promise)
+], GalleryController.prototype, "saveAdmin", null);
 __decorate([
     (0, common_1.Put)('admin/gallery/:id'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
@@ -188,7 +243,7 @@ __decorate([
     __param(3, (0, common_1.UploadedFile)(new common_1.ParseFilePipe({
         validators: [
             new common_1.MaxFileSizeValidator({ maxSize: 10 * 1024 * 1024 }),
-            new common_1.FileTypeValidator({ fileType: /(jpg|jpeg|png|webp|gif)$/ }),
+            new common_1.FileTypeValidator({ fileType: /^image\/(jpe?g|png|webp|gif)$/i, skipMagicNumbersValidation: true }),
         ],
         fileIsRequired: false
     }))),
@@ -207,7 +262,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], GalleryController.prototype, "deleteAdmin", null);
 exports.GalleryController = GalleryController = __decorate([
-    (0, common_1.Controller)('api'),
+    (0, common_1.Controller)(),
     __metadata("design:paramtypes", [gallery_service_1.GalleryService])
 ], GalleryController);
 //# sourceMappingURL=gallery.controller.js.map

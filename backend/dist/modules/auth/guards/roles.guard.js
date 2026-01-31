@@ -12,20 +12,31 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.RolesGuard = void 0;
 const common_1 = require("@nestjs/common");
 const core_1 = require("@nestjs/core");
+const ADMIN_ROLE_IDS = [1, 3];
 let RolesGuard = class RolesGuard {
     constructor(reflector) {
         this.reflector = reflector;
     }
     canActivate(context) {
+        var _a, _b, _c, _d, _e;
         const requiredRoles = this.reflector.getAllAndOverride('roles', [
             context.getHandler(),
             context.getClass(),
         ]);
-        if (!requiredRoles) {
+        if (!requiredRoles || requiredRoles.length === 0)
             return true;
-        }
         const { user } = context.switchToHttp().getRequest();
-        return requiredRoles.some((role) => user.roleName === role);
+        if (!user)
+            return false;
+        const roleId = Number((_c = (_b = (_a = user.role_id) !== null && _a !== void 0 ? _a : user.roleId) !== null && _b !== void 0 ? _b : user.role) !== null && _c !== void 0 ? _c : 0);
+        const roleName = String((_e = (_d = user.roleName) !== null && _d !== void 0 ? _d : user.role_name) !== null && _e !== void 0 ? _e : '').toLowerCase().trim();
+        if (ADMIN_ROLE_IDS.includes(roleId))
+            return true;
+        if (roleName && ['admin', 'super_admin'].includes(roleName))
+            return true;
+        if (roleName && requiredRoles.some((r) => String(r).toLowerCase() === roleName))
+            return true;
+        return false;
     }
 };
 exports.RolesGuard = RolesGuard;

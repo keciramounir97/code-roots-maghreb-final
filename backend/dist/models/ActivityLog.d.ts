@@ -1,11 +1,13 @@
-import { BaseModel } from './BaseModel';
-export declare class ActivityLog extends BaseModel {
+import { Model } from 'objection';
+export declare class ActivityLog extends Model {
     static tableName: string;
     id: number;
     actor_user_id?: number;
     type: string;
     description: string;
+    created_at?: string;
     actor?: import('./User').User;
+    $beforeInsert(): void;
     static jsonSchema: {
         type: string;
         required: string[];

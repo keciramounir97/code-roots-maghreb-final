@@ -36,10 +36,9 @@ export class TreesService {
         return Tree.query(this.knex)
             .where('user_id', userId)
             .orderBy('created_at', 'desc')
-            .withGraphFetched('people'); // To get counts
-        // Note: fetching all people might be heavy. Better to use count.
-        // But for now, let's stick to backward compat or simple query.
-        // Objection doesn't have easy count relation without plugin.
+            .withGraphFetched('owner')
+            .modifyGraph('owner', (builder: any) => builder.select('id', 'full_name', 'email'))
+            .withGraphFetched('people');
     }
 
     async listAdmin() {
@@ -55,8 +54,9 @@ export class TreesService {
         return tree;
     }
 
-    async create(data: any, userId: number, file: Express.Multer.File) {
-        if (!data.title) {
+    async create(data: any, userId: number, file?: Express.Multer.File) {
+        const title = data.title ?? data.name;
+        if (!title) {
             throw new BadRequestException('Title is required');
         }
 
@@ -70,8 +70,8 @@ export class TreesService {
             gedcomPath = `private/trees/${file.filename}`;
         }
 
-        const newTree = await Tree.query(this.knex).insert({
-            title: data.title,
+        const newTree = await Tree.query(this.knex).insertAndFetch({
+            title,
             description: data.description,
             archive_source: data.archiveSource,
             document_code: data.documentCode,
@@ -84,25 +84,31 @@ export class TreesService {
             await this.rebuildPeople(newTree.id, gedcomPath);
         }
 
-        await this.activityService.log(userId, 'trees', `Created tree: ${data.title}`);
+        await this.activityService.log(userId, 'trees', `Created tree: ${title}`);
         return newTree;
     }
 
-    async update(id: number, data: any, userId: number, userRole: number, file: Express.Multer.File) {
+    async update(id: number, data: any, userId: number, userRole: number, file?: Express.Multer.File) {
         const tree = await this.findOne(id);
 
-        if (userRole !== 1 && userRole !== 3 && tree.user_id !== userId) {
+        const roleId = Number(userRole ?? 0);
+        const isAdmin = roleId === 1 || roleId === 3;
+        const isOwner = tree.user_id === userId;
+        if (!isAdmin && !isOwner) {
             throw new ForbiddenException('Forbidden');
         }
 
         const updateData: any = {};
-        if (data.title) updateData.title = data.title;
+        const title = data.title ?? data.name;
+        if (title) updateData.title = title;
         if (data.description !== undefined) updateData.description = data.description;
         if (data.archiveSource !== undefined) updateData.archive_source = data.archiveSource;
         if (data.documentCode !== undefined) updateData.document_code = data.documentCode;
 
-        const isPublic = data.isPublic !== undefined ? (data.isPublic === 'true' || data.isPublic === true) : tree.is_public;
-        updateData.is_public = isPublic;
+        const isPublic = data.isPublic !== undefined
+            ? (data.isPublic === 'true' || data.isPublic === true || data.isPublic === 1)
+            : !!tree.is_public;
+        updateData.is_public = Boolean(isPublic);
 
         let gedcomPath = tree.gedcom_path;
 
@@ -153,7 +159,11 @@ export class TreesService {
 
     async delete(id: number, userId: number, userRole: number) {
         const tree = await this.findOne(id);
-        if (userRole !== 1 && userRole !== 3 && tree.user_id !== userId) {
+
+        const roleId = Number(userRole ?? 0);
+        const isAdmin = roleId === 1 || roleId === 3;
+        const isOwner = tree.user_id === userId;
+        if (!isAdmin && !isOwner) {
             throw new ForbiddenException('Forbidden');
         }
 
@@ -227,11 +237,12 @@ export class TreesService {
                 return;
             }
 
-            let people = [];
+            let people: { name?: string }[] = [];
             try {
-                people = this.parseGedcomPeople(fs.readFileSync(filePath, 'utf8'));
-            } catch (e) {
-                people = [];
+                people = this.parseGedcomPeople(fs.readFileSync(filePath, 'utf8')) || [];
+            } catch (parseErr) {
+                console.warn('GEDCOM parse failed, keeping existing people:', (parseErr as Error)?.message);
+                return;
             }
 
             await Person.query(this.knex).delete().where('tree_id', treeId);

@@ -70,20 +70,30 @@ let AuthService = class AuthService {
         };
     }
     async signup(data) {
-        const user = await this.usersService.create(data, null);
+        var _a;
+        const payload = Object.assign(Object.assign({}, data), { full_name: (_a = data.full_name) !== null && _a !== void 0 ? _a : data.fullName });
+        const user = await this.usersService.create(payload, null);
         return this.login(user);
     }
     async refreshToken(token) {
+        if (!token || typeof token !== 'string') {
+            throw new common_1.UnauthorizedException('Refresh token is required');
+        }
         const storedToken = await RefreshToken_1.RefreshToken.query(this.knex)
             .findOne({ token })
             .withGraphFetched('user');
         if (!storedToken || new Date(storedToken.expires_at) < new Date()) {
             throw new common_1.UnauthorizedException('Invalid or expired refresh token');
         }
+        const user = storedToken.user;
+        if (!user) {
+            await RefreshToken_1.RefreshToken.query(this.knex).deleteById(storedToken.id);
+            throw new common_1.UnauthorizedException('User no longer exists');
+        }
         const payload = {
-            sub: storedToken.user.id,
-            email: storedToken.user.email,
-            role: storedToken.user.role_id
+            sub: user.id,
+            email: user.email,
+            role: user.role_id
         };
         const newRefreshToken = crypto.randomBytes(40).toString('hex');
         const expiresAt = new Date();
@@ -91,7 +101,7 @@ let AuthService = class AuthService {
         await RefreshToken_1.RefreshToken.query(this.knex).deleteById(storedToken.id);
         await RefreshToken_1.RefreshToken.query(this.knex).insert({
             token: newRefreshToken,
-            user_id: storedToken.user.id,
+            user_id: user.id,
             expires_at: expiresAt.toISOString().slice(0, 19).replace('T', ' '),
         });
         return {
@@ -103,6 +113,50 @@ let AuthService = class AuthService {
         await RefreshToken_1.RefreshToken.query(this.knex).delete().where('user_id', userId);
         await this.activityService.log(userId, 'security', 'User logged out');
         return { message: 'Logged out' };
+    }
+    async requestReset(email) {
+        const normalized = String(email !== null && email !== void 0 ? email : '').trim().toLowerCase();
+        if (!normalized) {
+            throw new common_1.BadRequestException('Email is required');
+        }
+        const user = await this.usersService.findByEmail(normalized);
+        if (!user)
+            return { message: 'If the email exists, a reset link will be sent.' };
+        const code = crypto.randomBytes(6).toString('hex');
+        const codeHash = await bcrypt.hash(code, 10);
+        await this.knex('password_resets').del().where('email', normalized);
+        await this.knex('password_resets').insert({
+            email: normalized,
+            code_hash: codeHash,
+            expires_at: this.knex.raw('DATE_ADD(NOW(), INTERVAL 15 MINUTE)'),
+        });
+        return { message: 'If the email exists, a reset code will be sent.', code: process.env.NODE_ENV === 'development' ? code : undefined };
+    }
+    async verifyReset(email, code, newPassword) {
+        const normalizedEmail = String(email !== null && email !== void 0 ? email : '').trim().toLowerCase();
+        const trimmedCode = String(code !== null && code !== void 0 ? code : '').trim();
+        const pass = String(newPassword !== null && newPassword !== void 0 ? newPassword : '');
+        if (!normalizedEmail || !trimmedCode || !pass) {
+            throw new common_1.BadRequestException('Email, code, and new password are required');
+        }
+        if (pass.length < 6) {
+            throw new common_1.BadRequestException('Password must be at least 6 characters');
+        }
+        const row = await this.knex('password_resets')
+            .where('email', normalizedEmail)
+            .where('expires_at', '>', this.knex.fn.now())
+            .first();
+        if (!row) {
+            await this.knex('password_resets').del().where('email', normalizedEmail);
+            throw new common_1.BadRequestException('Invalid or expired reset code');
+        }
+        const valid = await bcrypt.compare(trimmedCode, row.code_hash);
+        if (!valid)
+            throw new common_1.BadRequestException('Invalid reset code');
+        const hash = await bcrypt.hash(pass, 10);
+        await this.knex('users').where('email', normalizedEmail).update({ password: hash });
+        await this.knex('password_resets').del().where('email', normalizedEmail);
+        return { message: 'Password reset successful' };
     }
 };
 exports.AuthService = AuthService;

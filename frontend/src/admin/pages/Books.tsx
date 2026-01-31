@@ -27,7 +27,7 @@ export default function Books() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const isDark = theme === "dark";
-  const isAdmin = user?.role === 1;
+  const isAdmin = user?.role === 1 || user?.role === 3;
 
   const pageBg = isDark ? "bg-[#3e2723]" : "bg-[#f5f1e8]";
   const text = isDark ? "text-[#f8f5ef]" : "text-[#3e2723]";
@@ -579,24 +579,23 @@ export default function Books() {
             <p className="opacity-80">
               {isAdmin
                 ? t(
-                    "books_admin_desc",
-                    "Upload and manage your genealogy library.",
-                  )
+                  "books_admin_desc",
+                  "Upload and manage your genealogy library.",
+                )
                 : t(
-                    "books_user_desc",
-                    "Browse public books or upload private books for your account.",
-                  )}
+                  "books_user_desc",
+                  "Browse public books or upload private books for your account.",
+                )}
             </p>
 
             {!isAdmin ? (
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  className={`px-3 py-2 rounded-md border text-sm font-semibold ${border} ${
-                    tab === "public"
+                  className={`px-3 py-2 rounded-md border text-sm font-semibold ${border} ${tab === "public"
                       ? "bg-[#5d4037] text-white border-transparent"
                       : hoverRow
-                  }`}
+                    }`}
                   onClick={() => setTab("public")}
                   disabled={loading}
                 >
@@ -604,11 +603,10 @@ export default function Books() {
                 </button>
                 <button
                   type="button"
-                  className={`px-3 py-2 rounded-md border text-sm font-semibold ${border} ${
-                    tab === "my"
+                  className={`px-3 py-2 rounded-md border text-sm font-semibold ${border} ${tab === "my"
                       ? "bg-[#5d4037] text-white border-transparent"
                       : hoverRow
-                  }`}
+                    }`}
                   onClick={() => setTab("my")}
                   disabled={loading}
                 >

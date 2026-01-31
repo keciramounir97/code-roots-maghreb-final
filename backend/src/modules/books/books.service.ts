@@ -71,7 +71,7 @@ export class BooksService {
 
         const coverPath = coverFile ? `/uploads/books/${coverFile.filename}` : null;
 
-        const newBook = await Book.query(this.knex).insert({
+        const newBook = await Book.query(this.knex).insertAndFetch({
             title: data.title,
             author: data.author,
             description: data.description,
@@ -93,8 +93,10 @@ export class BooksService {
     async update(id: number, data: any, userId: number, userRole: number, files: { file?: Express.Multer.File[], cover?: Express.Multer.File[] }) {
         const book = await this.findOne(id);
 
-        // Permission check
-        if (userRole !== 1 && userRole !== 3 && book.uploaded_by !== userId) {
+        const roleId = Number(userRole ?? 0);
+        const isAdmin = roleId === 1 || roleId === 3;
+        const isOwner = book.uploaded_by === userId;
+        if (!isAdmin && !isOwner) {
             throw new ForbiddenException('Forbidden');
         }
 
@@ -106,9 +108,10 @@ export class BooksService {
         if (data.archiveSource !== undefined) updateData.archive_source = data.archiveSource;
         if (data.documentCode !== undefined) updateData.document_code = data.documentCode;
 
-        // Determine Public Status
-        const isPublic = data.isPublic !== undefined ? (data.isPublic === 'true' || data.isPublic === true) : book.is_public;
-        updateData.is_public = isPublic;
+        const isPublic = data.isPublic !== undefined
+            ? (data.isPublic === 'true' || data.isPublic === true || data.isPublic === 1)
+            : !!book.is_public;
+        updateData.is_public = Boolean(isPublic);
 
         // Handle File Update
         const bookFile = files?.file?.[0];
@@ -158,7 +161,11 @@ export class BooksService {
 
     async delete(id: number, userId: number, userRole: number) {
         const book = await this.findOne(id);
-        if (userRole !== 1 && userRole !== 3 && book.uploaded_by !== userId) {
+
+        const roleId = Number(userRole ?? 0);
+        const isAdmin = roleId === 1 || roleId === 3;
+        const isOwner = book.uploaded_by === userId;
+        if (!isAdmin && !isOwner) {
             throw new ForbiddenException('Forbidden');
         }
 

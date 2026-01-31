@@ -19,7 +19,7 @@ import {
   X,
 } from "lucide-react";
 import { api } from "../api/client";
-import { getApiErrorMessage, getApiRoot } from "../api/helpers";
+import { getApiErrorMessage, getApiRoot, normalizeTree } from "../api/helpers";
 import { useTranslation } from "../context/TranslationContext";
 import RootsPageShell from "../components/RootsPageShell";
 import TreesBuilder, { parseGedcom } from "../admin/components/TreesBuilder";
@@ -90,9 +90,10 @@ export default function Gallery() {
 
         if (!mounted) return;
 
+        const apiRootVal = getApiRoot();
         let nextTrees =
           treesRes.status === "fulfilled" && Array.isArray(treesRes.value?.data)
-            ? treesRes.value.data
+            ? treesRes.value.data.map((t) => normalizeTree(t, { apiRoot: apiRootVal, isPublic: true }))
             : [];
 
         let nextGallery = [];
@@ -284,9 +285,8 @@ export default function Gallery() {
                   "search_gallery_placeholder",
                   "Search trees, images, books...",
                 )}
-                className={`w-full pl-10 py-3 rounded-md bg-transparent border ${borderColor} outline-none ${
-                  theme === "dark" ? "text-white" : "text-[#2c1810]"
-                }`}
+                className={`w-full pl-10 py-3 rounded-md bg-transparent border ${borderColor} outline-none ${theme === "dark" ? "text-white" : "text-[#2c1810]"
+                  }`}
               />
             </div>
             <div className="flex items-center gap-3">
@@ -294,9 +294,8 @@ export default function Gallery() {
               <select
                 value={typeFilter}
                 onChange={(e) => setTypeFilter(e.target.value)}
-                className={`w-full px-4 py-3 rounded-md bg-transparent border ${borderColor} outline-none ${
-                  theme === "dark" ? "text-white" : "text-[#2c1810]"
-                }`}
+                className={`w-full px-4 py-3 rounded-md bg-transparent border ${borderColor} outline-none ${theme === "dark" ? "text-white" : "text-[#2c1810]"
+                  }`}
               >
                 <option value="all">{t("all_content", "All content")}</option>
                 <option value="trees">{t("trees", "Family Trees")}</option>
@@ -310,9 +309,8 @@ export default function Gallery() {
                 <select
                   value={treeFilter}
                   onChange={(e) => setTreeFilter(e.target.value)}
-                  className={`w-full px-4 py-3 rounded-md bg-transparent border ${borderColor} outline-none ${
-                    theme === "dark" ? "text-white" : "text-[#2c1810]"
-                  }`}
+                  className={`w-full px-4 py-3 rounded-md bg-transparent border ${borderColor} outline-none ${theme === "dark" ? "text-white" : "text-[#2c1810]"
+                    }`}
                 >
                   <option value="all">{t("all_trees", "All Trees")}</option>
                   <option value="with-gedcom">
@@ -832,7 +830,7 @@ export default function Gallery() {
                 </div>
                 <div className="flex items-center gap-2">
                   {Number.isFinite(Number(viewTree.id)) &&
-                  viewTree.hasGedcom ? (
+                    viewTree.hasGedcom ? (
                     <a
                       href={downloadTreeUrl(viewTree.id)}
                       className="px-3 py-2 rounded-md text-white font-medium bg-gradient-to-r from-[#5d4037] to-[#d4af37] hover:opacity-90 transition inline-flex items-center gap-2 text-sm"

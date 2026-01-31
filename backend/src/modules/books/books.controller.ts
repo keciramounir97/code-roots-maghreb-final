@@ -10,7 +10,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { CreateBookDto, UpdateBookDto } from './dto/book.dto';
 
-@Controller('api')
+@Controller()
 export class BooksController {
     constructor(private readonly booksService: BooksService) { }
 
@@ -69,13 +69,15 @@ export class BooksController {
         { name: 'cover', maxCount: 1 },
     ]))
     async updateMy(@Param('id', ParseIntPipe) id: number, @Body() body: UpdateBookDto, @Request() req, @UploadedFiles() files: { file?: Express.Multer.File[], cover?: Express.Multer.File[] }) {
-        return this.booksService.update(id, body, req.user.id, req.user.role_id, files);
+        const userRole = req.user?.role_id ?? req.user?.roleId ?? req.user?.role;
+        return this.booksService.update(id, body, req.user.id, userRole, files);
     }
 
     @Delete('my/books/:id')
     @UseGuards(JwtAuthGuard)
     async deleteMy(@Param('id', ParseIntPipe) id: number, @Request() req) {
-        return this.booksService.delete(id, req.user.id, req.user.role_id);
+        const userRole = req.user?.role_id ?? req.user?.roleId ?? req.user?.role;
+        return this.booksService.delete(id, req.user.id, userRole);
     }
 
     @Get('my/books/:id/download')
@@ -99,6 +101,13 @@ export class BooksController {
         return this.booksService.listAdmin();
     }
 
+    @Get('admin/books/:id')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles('admin', 'super_admin')
+    async getAdmin(@Param('id', ParseIntPipe) id: number) {
+        return this.booksService.findOne(id);
+    }
+
     @Post('admin/books')
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles('admin', 'super_admin')
@@ -118,13 +127,15 @@ export class BooksController {
         { name: 'cover', maxCount: 1 },
     ]))
     async updateAdmin(@Param('id', ParseIntPipe) id: number, @Body() body: UpdateBookDto, @Request() req, @UploadedFiles() files: { file?: Express.Multer.File[], cover?: Express.Multer.File[] }) {
-        return this.booksService.update(id, body, req.user.id, req.user.role_id, files);
+        const userRole = req.user?.role_id ?? req.user?.roleId ?? req.user?.role;
+        return this.booksService.update(id, body, req.user.id, userRole, files);
     }
 
     @Delete('admin/books/:id')
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles('admin', 'super_admin')
     async deleteAdmin(@Param('id', ParseIntPipe) id: number, @Request() req) {
-        return this.booksService.delete(id, req.user.id, req.user.role_id);
+        const userRole = req.user?.role_id ?? req.user?.roleId ?? req.user?.role;
+        return this.booksService.delete(id, req.user.id, userRole);
     }
 }

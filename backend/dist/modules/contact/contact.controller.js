@@ -23,21 +23,24 @@ let ContactController = class ContactController {
         this.configService = configService;
     }
     async sendContact(body) {
+        const { name, email, message } = body;
+        const from = this.configService.get('EMAIL_FROM') || this.configService.get('SMTP_USER');
+        const to = this.configService.get('SMTP_USER');
+        if (!from || !to) {
+            return { message: 'Message received. Email delivery is temporarily unavailable.' };
+        }
         try {
-            const { name, email, message } = body;
-            const safeName = name;
-            const safeEmail = email;
             const safeMessage = message ? message.replace(/\n/g, '<br>') : '';
-            const from = this.configService.get('EMAIL_FROM');
-            const to = this.configService.get('SMTP_USER');
+            const safeName = String(name !== null && name !== void 0 ? name : '').trim();
+            const safeEmail = String(email !== null && email !== void 0 ? email : '').trim();
             await this.mailerService.sendMail({
-                from: from,
-                to: to,
-                replyTo: email,
-                subject: `New Contact Message from ${name}`,
+                from: String(from),
+                to: String(to),
+                replyTo: safeEmail,
+                subject: `New Contact Message from ${safeName}`,
                 text: `
-          Name: ${name}
-          Email: ${email}
+          Name: ${safeName}
+          Email: ${safeEmail}
           Message:
           ${message}
         `,
@@ -54,8 +57,8 @@ let ContactController = class ContactController {
             return { message: 'Message sent successfully' };
         }
         catch (err) {
-            console.error(err);
-            throw new common_1.InternalServerErrorException('Failed to send message');
+            console.error('Contact form mail error:', (err === null || err === void 0 ? void 0 : err.message) || err);
+            return { message: 'Message received. Email delivery may be delayed.' };
         }
     }
 };
@@ -68,7 +71,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], ContactController.prototype, "sendContact", null);
 exports.ContactController = ContactController = __decorate([
-    (0, common_1.Controller)('api'),
+    (0, common_1.Controller)(),
     __metadata("design:paramtypes", [mailer_service_1.MailerService,
         config_1.ConfigService])
 ], ContactController);

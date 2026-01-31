@@ -7,7 +7,7 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CreateGalleryDto, UpdateGalleryDto } from './dto/gallery.dto';
 
-@Controller('api')
+@Controller()
 export class GalleryController {
     constructor(private readonly galleryService: GalleryService) { }
 
@@ -45,7 +45,7 @@ export class GalleryController {
             new ParseFilePipe({
                 validators: [
                     new MaxFileSizeValidator({ maxSize: 10 * 1024 * 1024 }), // 10MB
-                    new FileTypeValidator({ fileType: /(jpg|jpeg|png|webp|gif)$/ }),
+                    new FileTypeValidator({ fileType: /^image\/(jpe?g|png|webp|gif)$/i, skipMagicNumbersValidation: true }),
                 ],
                 fileIsRequired: true
             })
@@ -53,6 +53,27 @@ export class GalleryController {
     ) {
         const item = await this.galleryService.create(body, req.user.id, file);
         return item;
+    }
+
+    @Post('my/gallery/:id/save')
+    @UseGuards(JwtAuthGuard)
+    @UseInterceptors(FileInterceptor('image'))
+    async saveMy(
+        @Param('id', ParseIntPipe) id: number,
+        @Body() body: UpdateGalleryDto,
+        @Request() req,
+        @UploadedFile(
+            new ParseFilePipe({
+                validators: [
+                    new MaxFileSizeValidator({ maxSize: 10 * 1024 * 1024 }),
+                    new FileTypeValidator({ fileType: /^image\/(jpe?g|png|webp|gif)$/i, skipMagicNumbersValidation: true }),
+                ],
+                fileIsRequired: false
+            })
+        ) file?: Express.Multer.File
+    ) {
+        const userRole = req.user?.role_id ?? req.user?.roleId ?? req.user?.role;
+        return this.galleryService.update(id, body, req.user.id, userRole, file);
     }
 
     @Put('my/gallery/:id')
@@ -66,19 +87,21 @@ export class GalleryController {
             new ParseFilePipe({
                 validators: [
                     new MaxFileSizeValidator({ maxSize: 10 * 1024 * 1024 }),
-                    new FileTypeValidator({ fileType: /(jpg|jpeg|png|webp|gif)$/ }),
+                    new FileTypeValidator({ fileType: /^image\/(jpe?g|png|webp|gif)$/i, skipMagicNumbersValidation: true }),
                 ],
                 fileIsRequired: false
             })
         ) file?: Express.Multer.File
     ) {
-        return this.galleryService.update(id, body, req.user.id, req.user.role_id, file);
+        const userRole = req.user?.role_id ?? req.user?.roleId ?? req.user?.role;
+        return this.galleryService.update(id, body, req.user.id, userRole, file);
     }
 
     @Delete('my/gallery/:id')
     @UseGuards(JwtAuthGuard)
     async deleteMy(@Param('id', ParseIntPipe) id: number, @Request() req) {
-        await this.galleryService.delete(id, req.user.id, req.user.role_id);
+        const userRole = req.user?.role_id ?? req.user?.roleId ?? req.user?.role;
+        await this.galleryService.delete(id, req.user.id, userRole);
         return { message: "Deleted successfully" };
     }
 
@@ -108,13 +131,35 @@ export class GalleryController {
             new ParseFilePipe({
                 validators: [
                     new MaxFileSizeValidator({ maxSize: 10 * 1024 * 1024 }),
-                    new FileTypeValidator({ fileType: /(jpg|jpeg|png|webp|gif)$/ }),
+                    new FileTypeValidator({ fileType: /^image\/(jpe?g|png|webp|gif)$/i, skipMagicNumbersValidation: true }),
                 ],
                 fileIsRequired: true
             })
         ) file: Express.Multer.File
     ) {
         return this.galleryService.create(body, req.user.id, file);
+    }
+
+    @Post('admin/gallery/:id/save')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles('admin', 'super_admin')
+    @UseInterceptors(FileInterceptor('image'))
+    async saveAdmin(
+        @Param('id', ParseIntPipe) id: number,
+        @Body() body: UpdateGalleryDto,
+        @Request() req,
+        @UploadedFile(
+            new ParseFilePipe({
+                validators: [
+                    new MaxFileSizeValidator({ maxSize: 10 * 1024 * 1024 }),
+                    new FileTypeValidator({ fileType: /^image\/(jpe?g|png|webp|gif)$/i, skipMagicNumbersValidation: true }),
+                ],
+                fileIsRequired: false
+            })
+        ) file?: Express.Multer.File
+    ) {
+        const userRole = req.user?.role_id ?? req.user?.roleId ?? req.user?.role;
+        return this.galleryService.update(id, body, req.user.id, userRole, file);
     }
 
     @Put('admin/gallery/:id')
@@ -129,20 +174,22 @@ export class GalleryController {
             new ParseFilePipe({
                 validators: [
                     new MaxFileSizeValidator({ maxSize: 10 * 1024 * 1024 }),
-                    new FileTypeValidator({ fileType: /(jpg|jpeg|png|webp|gif)$/ }),
+                    new FileTypeValidator({ fileType: /^image\/(jpe?g|png|webp|gif)$/i, skipMagicNumbersValidation: true }),
                 ],
                 fileIsRequired: false
             })
         ) file?: Express.Multer.File
     ) {
-        return this.galleryService.update(id, body, req.user.id, req.user.role_id, file);
+        const userRole = req.user?.role_id ?? req.user?.roleId ?? req.user?.role;
+        return this.galleryService.update(id, body, req.user.id, userRole, file);
     }
 
     @Delete('admin/gallery/:id')
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles('admin', 'super_admin')
     async deleteAdmin(@Param('id', ParseIntPipe) id: number, @Request() req) {
-        await this.galleryService.delete(id, req.user.id, req.user.role_id);
+        const userRole = req.user?.role_id ?? req.user?.roleId ?? req.user?.role;
+        await this.galleryService.delete(id, req.user.id, userRole);
         return { message: "Deleted successfully" };
     }
 }

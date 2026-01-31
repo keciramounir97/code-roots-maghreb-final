@@ -26,7 +26,7 @@ import { z } from "zod";
 
 import { useThemeStore } from "../store/theme";
 import { useAuth } from "../admin/components/AuthContext";
-import { api } from "../lib/api";
+import { api } from "../api/client";
 import { useTranslation } from "../context/TranslationContext";
 import LanguageMenu from "./LanguageMenu";
 
@@ -228,7 +228,7 @@ export default function Navbar() {
                   `navbar-link${isActive ? " active" : ""}`
                 }
               >
-                {user?.role === 1
+                {(user?.role === 1 || user?.role === 3)
                   ? t("admin", "Admin")
                   : t("dashboard", "Dashboard")}
               </NavLink>
@@ -344,7 +344,7 @@ export default function Navbar() {
         {/* Sidebar Header */}
         <div className="sidebar-header">
           <Link to="/" className="sidebar-logo" onClick={closeSidebar}>
-            <BookOpen className="w-8 h-8 text-[#d4af37]" />
+            <BookOpen className="w-8 h-8 text-accent-gold" />
             <div>
               <span className="sidebar-logo-main">Roots</span>
               <span className="sidebar-logo-sub">Maghreb</span>
@@ -398,7 +398,7 @@ export default function Navbar() {
             >
               <LayoutDashboard className="sidebar-link-icon" />
               <span>
-                {user?.role === 1
+                {(user?.role === 1 || user?.role === 3)
                   ? t("admin", "Admin Panel")
                   : t("dashboard", "My Dashboard")}
               </span>

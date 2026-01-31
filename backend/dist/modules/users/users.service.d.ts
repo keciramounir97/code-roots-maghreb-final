@@ -5,9 +5,9 @@ export declare class UsersService {
     private readonly activityService;
     constructor(knex: any, activityService: ActivityService);
     findAll(): Promise<User[]>;
-    findOne(id: number): Promise<User>;
+    findOne(id: number): Promise<any>;
     findByEmail(email: string): Promise<User>;
-    create(data: any, adminId: number): Promise<User>;
+    create(data: any, adminId: number | null): Promise<User>;
     update(id: number, data: any, adminId: number): Promise<{
         message: string;
     }>;

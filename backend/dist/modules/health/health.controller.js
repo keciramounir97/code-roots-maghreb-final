@@ -52,7 +52,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], HealthController.prototype, "health", null);
 exports.HealthController = HealthController = __decorate([
-    (0, common_1.Controller)('api'),
+    (0, common_1.Controller)(),
     __param(0, (0, common_2.Inject)('KnexConnection')),
     __metadata("design:paramtypes", [Function])
 ], HealthController);

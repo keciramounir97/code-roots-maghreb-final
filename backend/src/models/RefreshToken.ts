@@ -31,4 +31,12 @@ export class RefreshToken extends BaseModel {
             },
         },
     });
+
+    $beforeInsert() {
+        this.created_at = new Date().toISOString().slice(0, 19).replace('T', ' ');
+    }
+
+    $beforeUpdate() {
+        // No updated_at for refresh tokens
+    }
 }

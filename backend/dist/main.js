@@ -5,31 +5,68 @@ const app_module_1 = require("./app.module");
 const common_1 = require("@nestjs/common");
 const helmet = require("helmet");
 const process = require("process");
+const path = require("path");
+const compression = require("compression");
+const express_rate_limit_1 = require("express-rate-limit");
+const crypto_1 = require("crypto");
 const DEFAULT_CORS_ORIGINS = [
     'https://rootsmaghreb.com',
     'https://www.rootsmaghreb.com',
+    'http://rootsmaghreb.com',
+    'http://www.rootsmaghreb.com',
     'https://server.rootsmaghreb.com',
+    'http://server.rootsmaghreb.com',
 ];
 const DEV_CORS_ORIGINS = [
     'http://localhost:5173',
     'http://127.0.0.1:5173',
 ];
 function getCorsOrigins() {
+    if (process.env.NODE_ENV !== 'production')
+        return true;
     const raw = process.env.CORS_ORIGIN || process.env.FRONTEND_URL || '';
     const list = raw
         .split(',')
         .map((o) => o.trim().replace(/\/+$/, ''))
         .filter(Boolean);
-    if (process.env.NODE_ENV === 'production') {
-        const origins = list.length ? list : DEFAULT_CORS_ORIGINS;
-        return [...new Set([...origins])];
-    }
-    return list.length ? [...new Set([...list, ...DEV_CORS_ORIGINS])] : true;
+    const origins = list.length ? list : DEFAULT_CORS_ORIGINS;
+    return [...new Set([...origins])];
 }
 async function bootstrap() {
     console.log('🟢 SERVER STARTING...');
     try {
         const app = await core_1.NestFactory.create(app_module_1.AppModule);
+        const uploadsPath = path.join(process.cwd(), 'uploads');
+        app.use('/uploads', require('express').static(uploadsPath));
+        app.use(compression());
+        app.setGlobalPrefix('api');
+        app.use((req, _res, next) => {
+            req.id = req.headers['x-request-id'] || (0, crypto_1.randomUUID)();
+            next();
+        });
+        const rateLimitMax = parseInt(process.env.RATE_LIMIT_MAX || '100', 10);
+        const rateLimitWindow = parseInt(process.env.RATE_LIMIT_WINDOW_MS || '60000', 10);
+        const authRateLimitMax = parseInt(process.env.RATE_LIMIT_AUTH_MAX || '10', 10);
+        app.use((0, express_rate_limit_1.default)({
+            windowMs: rateLimitWindow,
+            max: rateLimitMax,
+            message: { statusCode: 429, message: 'Too many requests. Please try again later.' },
+            standardHeaders: true,
+            legacyHeaders: false,
+            skip: (req) => {
+                const p = req.path || '';
+                return p.includes('/health') || p.includes('/auth/');
+            },
+        }));
+        const authLimiter = (0, express_rate_limit_1.default)({
+            windowMs: rateLimitWindow,
+            max: authRateLimitMax,
+            message: { statusCode: 429, message: 'Too many attempts. Try again later.' },
+            standardHeaders: true,
+            legacyHeaders: false,
+        });
+        app.use('/api/auth/login', authLimiter);
+        app.use('/api/auth/signup', authLimiter);
         const helmetOptions = {
             contentSecurityPolicy: false,
             crossOriginEmbedderPolicy: false,
@@ -61,6 +98,7 @@ async function bootstrap() {
             methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
             allowedHeaders: 'Content-Type, Accept, Authorization, X-Requested-With, Origin, Pragma, Cache-Control, Expires',
             credentials: true,
+            preflightContinue: false,
         });
         app.useGlobalPipes(new common_1.ValidationPipe({
             whitelist: true,
@@ -72,7 +110,7 @@ async function bootstrap() {
         app.useGlobalInterceptors(new TransformInterceptor());
         app.useGlobalFilters(new AllExceptionsFilter());
         const port = process.env.PORT || 5000;
-        await app.listen(port);
+        await app.listen(port, '0.0.0.0');
         console.log('🟢 SERVER READY');
         console.log(`🟢 DB CONNECTED - Application running on: ${await app.getUrl()}`);
         process.on('SIGTERM', async () => {

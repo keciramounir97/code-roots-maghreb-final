@@ -14,13 +14,13 @@ function RootsPageShell({
   className = "",
 }: RootsPageShellProps) {
   return (
-    <div className={`roots-shell ${className}`}>
+    <div className={`roots-shell page-container w-full mx-auto ${className}`}>
       {hero ? (
         <section className={`heritage-hero text-center ${heroClassName}`}>
           {hero}
         </section>
       ) : null}
-      <div className="space-y-10">{children}</div>
+      <div className="space-y-6 sm:space-y-8 lg:space-y-10 xl:space-y-12">{children}</div>
     </div>
   );
 }

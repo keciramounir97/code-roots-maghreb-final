@@ -17,7 +17,7 @@ export default function Settings() {
   const { user, refreshMe } = useAuth();
   const { t } = useTranslation();
   const isDark = theme === "dark";
-  const isAdmin = user?.role === 1;
+  const isAdmin = user?.role === 1 || user?.role === 3;
 
   const pageBg = isDark ? "bg-[#3e2723]" : "bg-[#f5f1e8]";
   const text = isDark ? "text-[#f8f5ef]" : "text-[#3e2723]";

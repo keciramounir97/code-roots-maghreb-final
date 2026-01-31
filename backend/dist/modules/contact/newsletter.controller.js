@@ -22,9 +22,16 @@ let NewsletterController = class NewsletterController {
         this.configService = configService;
     }
     async subscribe(body) {
+        var _a;
+        const email = String((_a = body === null || body === void 0 ? void 0 : body.email) !== null && _a !== void 0 ? _a : '').trim().toLowerCase();
+        if (!email) {
+            throw new common_1.BadRequestException('Email is required');
+        }
+        const from = this.configService.get('EMAIL_FROM') || this.configService.get('SMTP_USER');
+        if (!from) {
+            return { message: 'Subscribed. Confirmation email may be delayed.' };
+        }
         try {
-            const email = String(body.email || '').trim().toLowerCase();
-            const from = this.configService.get('EMAIL_FROM') || this.configService.get('SMTP_USER');
             await this.mailerService.sendMail({
                 from: from,
                 to: email,
@@ -42,8 +49,8 @@ let NewsletterController = class NewsletterController {
             return { message: 'Subscribed' };
         }
         catch (err) {
-            console.error(err);
-            throw new common_1.InternalServerErrorException('Failed to subscribe');
+            console.error('Newsletter subscribe error:', (err === null || err === void 0 ? void 0 : err.message) || err);
+            return { message: 'Subscribed. Confirmation email may be delayed.' };
         }
     }
 };
@@ -56,7 +63,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], NewsletterController.prototype, "subscribe", null);
 exports.NewsletterController = NewsletterController = __decorate([
-    (0, common_1.Controller)('api'),
+    (0, common_1.Controller)(),
     __metadata("design:paramtypes", [mailer_service_1.MailerService,
         config_1.ConfigService])
 ], NewsletterController);

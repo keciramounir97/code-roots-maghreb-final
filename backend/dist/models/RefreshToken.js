@@ -4,6 +4,11 @@ exports.RefreshToken = void 0;
 const BaseModel_1 = require("./BaseModel");
 const objection_1 = require("objection");
 class RefreshToken extends BaseModel_1.BaseModel {
+    $beforeInsert() {
+        this.created_at = new Date().toISOString().slice(0, 19).replace('T', ' ');
+    }
+    $beforeUpdate() {
+    }
 }
 exports.RefreshToken = RefreshToken;
 RefreshToken.tableName = 'refresh_tokens';

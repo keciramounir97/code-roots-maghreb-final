@@ -5,7 +5,7 @@ export declare class NewsletterController {
     private readonly configService;
     constructor(mailerService: MailerService, configService: ConfigService);
     subscribe(body: {
-        email: string;
+        email?: string;
     }): Promise<{
         message: string;
     }>;

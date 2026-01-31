@@ -1,5 +1,5 @@
 
-import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Request, UseInterceptors, UploadedFile, Res, NotFoundException, ForbiddenException, ParseIntPipe, ParseFilePipe, MaxFileSizeValidator, FileTypeValidator } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Request, UseInterceptors, UploadedFile, Res, NotFoundException, ForbiddenException, ParseIntPipe } from '@nestjs/common';
 import { TreesService } from './trees.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -10,13 +10,22 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { CreateTreeDto, UpdateTreeDto } from './dto/tree.dto';
 
-@Controller('api')
+@Controller()
 export class TreesController {
     constructor(private readonly treesService: TreesService) { }
 
     @Get('trees')
     async listPublic() {
         return this.treesService.listPublic();
+    }
+
+    @Get('trees/:id/gedcom')
+    async downloadPublicGedcom(@Param('id', ParseIntPipe) id: number, @Res() res: Response) {
+        const tree = await this.treesService.getPublic(id);
+        if (!tree.gedcom_path) throw new NotFoundException('GEDCOM file not found');
+        const filePath = this.treesService.getGedcomPath(tree);
+        if (!filePath || !fs.existsSync(filePath)) throw new NotFoundException('File not found');
+        res.download(filePath, path.basename(filePath));
     }
 
     @Get('trees/:id')
@@ -40,20 +49,11 @@ export class TreesController {
 
     @Post('my/trees')
     @UseGuards(JwtAuthGuard)
-    @UseInterceptors(FileInterceptor('file')) // Configured in Module for disk storage
+    @UseInterceptors(FileInterceptor('file'))
     async createMy(
         @Body() body: CreateTreeDto,
         @Request() req,
-        @UploadedFile(
-            new ParseFilePipe({
-                validators: [
-                    new MaxFileSizeValidator({ maxSize: 50 * 1024 * 1024 }), // 50MB
-                    // GEDCOM is text/plain or binary, hard to validate type strictly, but we can try
-                    // new FileTypeValidator({ fileType: 'text/plain' }), 
-                ],
-                fileIsRequired: false // Might create tree without initial file?
-            }),
-        ) file?: Express.Multer.File
+        @UploadedFile() file?: Express.Multer.File
     ) {
         return this.treesService.create(body, req.user.id, file);
     }
@@ -67,13 +67,28 @@ export class TreesController {
         @Request() req,
         @UploadedFile() file?: Express.Multer.File
     ) {
-        return this.treesService.update(id, body, req.user.id, req.user.role_id, file);
+        const userRole = req.user?.role_id ?? req.user?.roleId ?? req.user?.role;
+        return this.treesService.update(id, body, req.user.id, userRole, file);
+    }
+
+    @Post('my/trees/:id/save')
+    @UseGuards(JwtAuthGuard)
+    @UseInterceptors(FileInterceptor('file'))
+    async saveMy(
+        @Param('id', ParseIntPipe) id: number,
+        @Body() body: UpdateTreeDto,
+        @Request() req,
+        @UploadedFile() file?: Express.Multer.File
+    ) {
+        const userRole = req.user?.role_id ?? req.user?.roleId ?? req.user?.role;
+        return this.treesService.update(id, body, req.user.id, userRole, file);
     }
 
     @Delete('my/trees/:id')
     @UseGuards(JwtAuthGuard)
     async deleteMy(@Param('id', ParseIntPipe) id: number, @Request() req) {
-        return this.treesService.delete(id, req.user.id, req.user.role_id);
+        const userRole = req.user?.role_id ?? req.user?.roleId ?? req.user?.role;
+        return this.treesService.delete(id, req.user.id, userRole);
     }
 
     @Get('my/trees/:id/gedcom')
@@ -96,6 +111,39 @@ export class TreesController {
         return this.treesService.listAdmin();
     }
 
+    @Get('admin/trees/:id')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles('admin', 'super_admin')
+    async getAdmin(@Param('id', ParseIntPipe) id: number) {
+        return this.treesService.findOne(id);
+    }
+
+    @Post('admin/trees')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles('admin', 'super_admin')
+    @UseInterceptors(FileInterceptor('file'))
+    async createAdmin(
+        @Body() body: CreateTreeDto,
+        @Request() req,
+        @UploadedFile() file?: Express.Multer.File
+    ) {
+        return this.treesService.create(body, req.user.id, file);
+    }
+
+    @Post('admin/trees/:id/save')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles('admin', 'super_admin')
+    @UseInterceptors(FileInterceptor('file'))
+    async saveAdmin(
+        @Param('id', ParseIntPipe) id: number,
+        @Body() body: UpdateTreeDto,
+        @Request() req,
+        @UploadedFile() file?: Express.Multer.File
+    ) {
+        const userRole = req.user?.role_id ?? req.user?.roleId ?? req.user?.role;
+        return this.treesService.update(id, body, req.user.id, userRole, file);
+    }
+
     @Put('admin/trees/:id')
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles('admin', 'super_admin')
@@ -106,13 +154,15 @@ export class TreesController {
         @Request() req,
         @UploadedFile() file?: Express.Multer.File
     ) {
-        return this.treesService.update(id, body, req.user.id, req.user.role_id, file);
+        const userRole = req.user?.role_id ?? req.user?.roleId ?? req.user?.role;
+        return this.treesService.update(id, body, req.user.id, userRole, file);
     }
 
     @Delete('admin/trees/:id')
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles('admin', 'super_admin')
     async deleteAdmin(@Param('id', ParseIntPipe) id: number, @Request() req) {
-        return this.treesService.delete(id, req.user.id, req.user.role_id);
+        const userRole = req.user?.role_id ?? req.user?.roleId ?? req.user?.role;
+        return this.treesService.delete(id, req.user.id, userRole);
     }
 }

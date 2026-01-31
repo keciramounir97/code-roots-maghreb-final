@@ -92,7 +92,7 @@ export default function Login() {
       <section className="roots-section">
         <div
           data-aos="zoom-in"
-          className={`${cardBg} relative mx-auto w-full max-w-md px-10 py-12 rounded-lg shadow-2xl border ${borderColor}`}
+          className={`${cardBg} relative mx-auto w-full max-w-md px-6 sm:px-10 py-8 sm:py-12 rounded-xl shadow-2xl border ${borderColor}`}
         >
           <form className="space-y-6" onSubmit={handleLogin}>
             <div className="space-y-2">

@@ -59,7 +59,7 @@ export class GalleryService {
         // Gallery currently only fully public uploads in legacy code (no private folder logic seen in galleryController, unlike books/trees)
         // Legacy: imagePath: `/uploads/gallery/${req.file.filename}`
 
-        const newItem = await Gallery.query(this.knex).insert({
+        const newItem = await Gallery.query(this.knex).insertAndFetch({
             title: data.title,
             description: data.description,
             image_path: imagePath,
@@ -81,7 +81,10 @@ export class GalleryService {
     async update(id: number, data: any, userId: number, userRole: number, file: Express.Multer.File) {
         const item = await this.findOne(id);
 
-        if (userRole !== 1 && userRole !== 3 && item.uploaded_by !== userId) {
+        const roleId = Number(userRole ?? 0);
+        const isAdmin = roleId === 1 || roleId === 3;
+        const isOwner = item.uploaded_by === userId;
+        if (!isAdmin && !isOwner) {
             throw new ForbiddenException('Forbidden');
         }
 
@@ -94,8 +97,10 @@ export class GalleryService {
         if (data.year !== undefined) updateData.year = data.year;
         if (data.photographer !== undefined) updateData.photographer = data.photographer;
 
-        const isPublic = data.isPublic !== undefined ? (data.isPublic === 'true' || data.isPublic === true) : item.is_public;
-        updateData.is_public = isPublic;
+        const isPublic = data.isPublic !== undefined
+            ? (data.isPublic === 'true' || data.isPublic === true || data.isPublic === 1)
+            : !!item.is_public;
+        updateData.is_public = Boolean(isPublic);
 
         if (file) {
             if (item.image_path) safeUnlink(resolveStoredFilePath(item.image_path));
@@ -110,7 +115,11 @@ export class GalleryService {
 
     async delete(id: number, userId: number, userRole: number) {
         const item = await this.findOne(id);
-        if (userRole !== 1 && userRole !== 3 && item.uploaded_by !== userId) {
+
+        const roleId = Number(userRole ?? 0);
+        const isAdmin = roleId === 1 || roleId === 3;
+        const isOwner = item.uploaded_by === userId;
+        if (!isAdmin && !isOwner) {
             throw new ForbiddenException('Forbidden');
         }
 

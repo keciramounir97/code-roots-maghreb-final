@@ -1,14 +1,22 @@
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import * as helmet from 'helmet';
 import * as process from 'process';
+import * as path from 'path';
+import * as compression from 'compression';
+import rateLimit from 'express-rate-limit';
+import { randomUUID } from 'crypto';
 
 /** Production CORS origins: server.rootsmaghreb.com, rootsmaghreb.com; dev: localhost:5173 */
 const DEFAULT_CORS_ORIGINS = [
     'https://rootsmaghreb.com',
     'https://www.rootsmaghreb.com',
+    'http://rootsmaghreb.com',
+    'http://www.rootsmaghreb.com',
     'https://server.rootsmaghreb.com',
+    'http://server.rootsmaghreb.com',
 ];
 const DEV_CORS_ORIGINS = [
     'http://localhost:5173',
@@ -16,23 +24,66 @@ const DEV_CORS_ORIGINS = [
 ];
 
 function getCorsOrigins(): string[] | true {
+    // Dev: allow all origins to prevent CORS blocking
+    if (process.env.NODE_ENV !== 'production') return true;
     const raw = process.env.CORS_ORIGIN || process.env.FRONTEND_URL || '';
     const list = raw
         .split(',')
         .map((o) => o.trim().replace(/\/+$/, ''))
         .filter(Boolean);
-    if (process.env.NODE_ENV === 'production') {
-        const origins = list.length ? list : DEFAULT_CORS_ORIGINS;
-        return [...new Set([...origins])];
-    }
-    return list.length ? [...new Set([...list, ...DEV_CORS_ORIGINS])] : true;
+    const origins = list.length ? list : DEFAULT_CORS_ORIGINS;
+    return [...new Set([...origins])];
 }
 
 async function bootstrap() {
     console.log('🟢 SERVER STARTING...');
 
     try {
-        const app = await NestFactory.create(AppModule);
+        const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+        // Static file serving for uploads (images, books, GEDCOM) - cPanel/production safe
+        const uploadsPath = path.join(process.cwd(), 'uploads');
+        app.use('/uploads', require('express').static(uploadsPath));
+
+        // Compression (production-ready)
+        app.use(compression());
+
+        // API Prefix (use 'api' for cPanel/proxy compatibility; /api/auth/login, etc.)
+        app.setGlobalPrefix('api');
+
+        // Request ID for tracing
+        app.use((req: any, _res, next) => {
+            req.id = req.headers['x-request-id'] || randomUUID();
+            next();
+        });
+
+        // Rate limiting
+        const rateLimitMax = parseInt(process.env.RATE_LIMIT_MAX || '100', 10);
+        const rateLimitWindow = parseInt(process.env.RATE_LIMIT_WINDOW_MS || '60000', 10);
+        const authRateLimitMax = parseInt(process.env.RATE_LIMIT_AUTH_MAX || '10', 10);
+
+        app.use(rateLimit({
+            windowMs: rateLimitWindow,
+            max: rateLimitMax,
+            message: { statusCode: 429, message: 'Too many requests. Please try again later.' },
+            standardHeaders: true,
+            legacyHeaders: false,
+            skip: (req) => {
+                const p = req.path || '';
+                return p.includes('/health') || p.includes('/auth/');
+            },
+        }));
+
+        // Stricter rate limit for auth routes (applied before global for /auth/*)
+        const authLimiter = rateLimit({
+            windowMs: rateLimitWindow,
+            max: authRateLimitMax,
+            message: { statusCode: 429, message: 'Too many attempts. Try again later.' },
+            standardHeaders: true,
+            legacyHeaders: false,
+        });
+        app.use('/api/auth/login', authLimiter);
+        app.use('/api/auth/signup', authLimiter);
 
         // Security: Helmet + explicit headers (Pragma, X-Frame-Options, etc.)
         const helmetOptions: Parameters<typeof helmet.default>[0] = {
@@ -53,21 +104,22 @@ async function bootstrap() {
             next();
         });
 
-        // CORS: authorised origins only (rootsmaghreb.com, server.rootsmaghreb.com, localhost:5173)
+        // CORS: dev = allow all; prod = allowed origins
         const corsOrigins = getCorsOrigins();
         app.enableCors({
             origin:
                 corsOrigins === true
                     ? true
                     : (origin: string | undefined, cb: (err: Error | null, allow?: boolean) => void) => {
-                          if (!origin) return cb(null, true); // same-origin or tools
-                          const allowed = corsOrigins as string[];
-                          const ok = allowed.some((o) => origin === o || origin === o.replace(/\/$/, ''));
-                          cb(null, ok);
-                      },
+                        if (!origin) return cb(null, true);
+                        const allowed = corsOrigins as string[];
+                        const ok = allowed.some((o) => origin === o || origin === o.replace(/\/$/, ''));
+                        cb(null, ok);
+                    },
             methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
             allowedHeaders: 'Content-Type, Accept, Authorization, X-Requested-With, Origin, Pragma, Cache-Control, Expires',
             credentials: true,
+            preflightContinue: false,
         });
 
         // Validation
@@ -85,7 +137,7 @@ async function bootstrap() {
 
         // Passenger / cPanel Port
         const port = process.env.PORT || 5000;
-        await app.listen(port);
+        await app.listen(port, '0.0.0.0');
 
         console.log('🟢 SERVER READY');
         console.log(`🟢 DB CONNECTED - Application running on: ${await app.getUrl()}`);

@@ -24,6 +24,7 @@ export declare class BooksController {
     }>;
     downloadMy(id: number, res: Response, req: any): Promise<void>;
     listAdmin(): Promise<import("../../models/Book").Book[]>;
+    getAdmin(id: number): Promise<import("../../models/Book").Book>;
     createAdmin(body: CreateBookDto, req: any, files: {
         file?: Express.Multer.File[];
         cover?: Express.Multer.File[];

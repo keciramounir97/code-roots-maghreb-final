@@ -17,7 +17,7 @@ import { ActivityModule } from '../activity/activity.module';
             imports: [ConfigModule],
             useFactory: async (configService: ConfigService) => ({
                 secret: configService.get<string>('JWT_SECRET') || 'fallback_secret',
-                signOptions: { expiresIn: '15m' }, // Short lived access token
+                signOptions: { expiresIn: configService.get<string>('JWT_EXPIRES_IN') || '1d' },
             }),
             inject: [ConfigService],
         }),

@@ -4,7 +4,7 @@ export declare class UsersController {
     private readonly usersService;
     constructor(usersService: UsersService);
     findAll(): Promise<import("../../models/User").User[]>;
-    findOne(id: number): Promise<import("../../models/User").User>;
+    findOne(id: number): Promise<any>;
     create(body: CreateUserDto, req: any): Promise<import("../../models/User").User>;
     update(id: number, body: UpdateUserDto, req: any): Promise<{
         message: string;

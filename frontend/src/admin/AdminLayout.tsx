@@ -6,15 +6,18 @@ import Breadcrumb from "./components/Breadcrumb";
 
 export default function AdminLayout() {
   const [open, setOpen] = useState(true);
+
   return (
-    <div className="admin-shell">
-      <AdminHeader onToggleSidebar={() => setOpen((v) => !v)} />
-      <AdminSidebar open={open} onClose={() => setOpen(false)} />
+    <div className="admin-shell min-h-screen">
+      <AdminHeader sidebarOpen={open} onToggleSidebar={() => setOpen((v) => !v)} />
+      <AdminSidebar open={open} onClose={() => setOpen(false)} onToggle={() => setOpen((v) => !v)} />
       <main
-        className={`transition-all duration-300 pt-6 pb-10 px-4 ${open ? "ltr:pl-72 rtl:pr-72" : ""}`}
+        className={`transition-all duration-300 pt-20 pb-10 px-4 sm:px-6 ${
+          open ? "lg:pl-72" : ""
+        }`}
       >
-        <div className="admin-panel">
-          <div className="admin-panel-shell">
+        <div className="admin-panel max-w-7xl mx-auto">
+          <div className="admin-panel-shell rounded-xl">
             <Breadcrumb />
             <Outlet context={{ sidebarOpen: open }} />
           </div>

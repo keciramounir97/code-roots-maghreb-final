@@ -1457,16 +1457,16 @@ export default function TreesBuilder({
             (l) => typeof l.source !== "string" && typeof l.target !== "string"
           );
 
-        const coupleColor = isDark ? "#d4af37" : "#5d4037"; // Gold/Brown
-        const coupleInnerColor = isDark ? "#2c1810" : "#f5f1e8"; // Background
-        const childColor = isDark ? "#556b2f" : "#6b8e23"; // Olive Green distinct
+        const coupleColor = isDark ? "#d4af37" : "#5d4037"; // Gold/Brown for parents
+        const coupleInnerColor = isDark ? "#2c1810" : "#f5f1e8"; // Gap between double lines
+        const childColor = isDark ? "#1565c0" : "#1565c0"; // Distinct blue for parent-child
 
         const coupleLinks = simLinks.filter((l) => l.type === "couple");
         const childLinksOnly = simLinks.filter((l) => l.type !== "couple");
 
         const linkLayer = g.append("g").attr("class", "links");
 
-        // Double Line: Outer Thick (for parents/couples)
+        // Double Line: Two thick lines with gap (parents/couples)
         const coupleOuter = linkLayer
           .selectAll("path.couple-outer")
           .data(coupleLinks)
@@ -1475,7 +1475,7 @@ export default function TreesBuilder({
           .attr("class", "couple-outer")
           .attr("fill", "none")
           .attr("stroke", coupleColor)
-          .attr("stroke-width", 12) // Thicker for visibility
+          .attr("stroke-width", 14) // Outer: creates two thick bands
           .attr("stroke-linecap", "round")
           .attr("stroke-linejoin", "round")
           .attr("opacity", 1)
@@ -1497,7 +1497,7 @@ export default function TreesBuilder({
             tooltip.style("visibility", "hidden");
           });
 
-        // Double Line: Inner Thin (creates double line effect)
+        // Double Line: Inner gap (creates spaced double thick lines for parents)
         const coupleInner = linkLayer
           .selectAll("path.couple-inner")
           .data(coupleLinks)
@@ -1506,13 +1506,13 @@ export default function TreesBuilder({
           .attr("class", "couple-inner")
           .attr("fill", "none")
           .attr("stroke", coupleInnerColor)
-          .attr("stroke-width", 4) // visible gap for double line effect
+          .attr("stroke-width", 6) // Gap between the 2 thick lines
           .attr("stroke-linecap", "round")
           .attr("stroke-linejoin", "round")
           .attr("opacity", 1)
           .style("pointer-events", "none"); // Don't capture mouse events on inner line
 
-        // Child Links: Single solid line (parent to child) - NO DASH
+        // Child Links: One thick line, distinct color (parent to child)
         const childLinks = linkLayer
           .selectAll("path.child-link")
           .data(childLinksOnly)
@@ -1521,7 +1521,7 @@ export default function TreesBuilder({
           .attr("class", "child-link")
           .attr("fill", "none")
           .attr("stroke", childColor)
-          .attr("stroke-width", 3)
+          .attr("stroke-width", 4) // Thick, distinct from parent lines
           .attr("stroke-linecap", "round")
           .attr("stroke-linejoin", "round")
           .attr("opacity", 0.9)

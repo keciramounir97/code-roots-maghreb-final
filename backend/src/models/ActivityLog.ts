@@ -1,16 +1,20 @@
-import { BaseModel } from './BaseModel';
 import { Model } from 'objection';
 
-export class ActivityLog extends BaseModel {
+export class ActivityLog extends Model {
     static tableName = 'activity_logs';
 
     id!: number;
     actor_user_id?: number;
     type!: string;
     description!: string;
+    created_at?: string;
 
     actor?: import('./User').User;
-    // created_at inherited from BaseModel (but no updated_at for logs usually, handled by base model still fine)
+
+    $beforeInsert() {
+        this.created_at = new Date().toISOString().slice(0, 19).replace('T', ' ');
+        // activity_logs has no updated_at column
+    }
 
     static jsonSchema = {
         type: 'object',

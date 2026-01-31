@@ -8,14 +8,21 @@ export class ActivityService {
 
     async log(userId: number | null, type: string, description: string) {
         try {
-            await ActivityLog.query(this.knex).insert({
+            await this.knex('activity_logs').insert({
                 actor_user_id: userId,
                 type,
                 description,
+                created_at: new Date().toISOString().slice(0, 19).replace('T', ' '),
             });
         } catch (err) {
             console.error('Failed to log activity:', err.message);
             // Don't crash request if logging fails
         }
+    }
+    async findAll(limit = 50) {
+        return ActivityLog.query(this.knex)
+            .withGraphFetched('actor')
+            .orderBy('created_at', 'desc')
+            .limit(limit);
     }
 }

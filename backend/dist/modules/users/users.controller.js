@@ -79,7 +79,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "delete", null);
 exports.UsersController = UsersController = __decorate([
-    (0, common_1.Controller)('api/admin/users'),
+    (0, common_1.Controller)('admin/users'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     (0, roles_decorator_1.Roles)('admin', 'super_admin'),
     __metadata("design:paramtypes", [users_service_1.UsersService])

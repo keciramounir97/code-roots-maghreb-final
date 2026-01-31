@@ -12,8 +12,8 @@ export class SearchService {
         if (!query) return { books: [], trees: [], people: [] };
         const q = query.trim();
 
-        // Check visibility
-        const canSeeAllTrees = user && (user.roleName === 'admin' || user.roleName === 'super_admin' || user.role_id === 1); // logic simplified
+        const roleId = Number((user as any)?.role_id ?? (user as any)?.roleId ?? (user as any)?.role ?? 0);
+        const canSeeAllTrees = user && (roleId === 1 || roleId === 3 || (user as any).roleName === 'admin' || (user as any).roleName === 'super_admin');
 
         // Books
         const books = await Book.query(this.knex)
@@ -46,7 +46,9 @@ export class SearchService {
             }
         }
 
-        const trees = await treeQuery.orderBy('title', 'asc').limit(20).withGraphFetched('owner');
+        const trees = await treeQuery.orderBy('title', 'asc').limit(20)
+            .withGraphFetched('owner')
+            .modifyGraph('owner', (builder: any) => builder.select('id', 'full_name'));
 
         // People
         const peopleQuery = Person.query(this.knex)
@@ -66,7 +68,8 @@ export class SearchService {
         const people = await peopleQuery
             .orderBy('name', 'asc')
             .limit(30)
-            .withGraphFetched('tree.owner');
+            .withGraphFetched('tree.owner')
+            .modifyGraph('tree.owner', (builder: any) => builder.select('id', 'full_name'));
 
         return {
             books,

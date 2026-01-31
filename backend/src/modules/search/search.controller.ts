@@ -18,7 +18,7 @@ export class OptionalJwtAuthGuard extends AuthGuard('jwt') {
     }
 }
 
-@Controller('api')
+@Controller()
 export class SearchController {
     constructor(private readonly searchService: SearchService) { }
 

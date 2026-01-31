@@ -1,8 +1,8 @@
-import { Controller, Post, Body, InternalServerErrorException } from '@nestjs/common';
+import { Controller, Post, Body, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { MailerService } from '../../common/mailer/mailer.service';
 import { ConfigService } from '@nestjs/config';
 
-@Controller('api')
+@Controller()
 export class NewsletterController {
     constructor(
         private readonly mailerService: MailerService,
@@ -10,11 +10,16 @@ export class NewsletterController {
     ) { }
 
     @Post('newsletter/subscribe')
-    async subscribe(@Body() body: { email: string }) {
+    async subscribe(@Body() body: { email?: string }) {
+        const email = String(body?.email ?? '').trim().toLowerCase();
+        if (!email) {
+            throw new BadRequestException('Email is required');
+        }
+        const from = this.configService.get<string>('EMAIL_FROM') || this.configService.get<string>('SMTP_USER');
+        if (!from) {
+            return { message: 'Subscribed. Confirmation email may be delayed.' };
+        }
         try {
-            const email = String(body.email || '').trim().toLowerCase();
-            const from = this.configService.get<string>('EMAIL_FROM') || this.configService.get<string>('SMTP_USER');
-
             await this.mailerService.sendMail({
                 from: from,
                 to: email,
@@ -32,8 +37,8 @@ export class NewsletterController {
 
             return { message: 'Subscribed' };
         } catch (err) {
-            console.error(err);
-            throw new InternalServerErrorException('Failed to subscribe');
+            console.error('Newsletter subscribe error:', err?.message || err);
+            return { message: 'Subscribed. Confirmation email may be delayed.' };
         }
     }
 }

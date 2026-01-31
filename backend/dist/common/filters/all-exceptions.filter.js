@@ -23,18 +23,19 @@ let AllExceptionsFilter = AllExceptionsFilter_1 = class AllExceptionsFilter {
         const message = exception instanceof common_1.HttpException
             ? exception.getResponse()
             : 'Internal server error';
-        const errorMessage = typeof message === 'object' && message.message
+        const errorMessage = typeof message === 'object' && (message === null || message === void 0 ? void 0 : message.message)
             ? message.message
             : message;
-        this.logger.error(`HTTP ${status} Error: ${errorMessage}`, exception instanceof Error ? exception.stack : '');
-        response.status(status).json({
-            statusCode: status,
-            message: Array.isArray(errorMessage) ? errorMessage[0] : errorMessage,
-            data: null,
-            error: typeof message === 'object' ? message : { message },
-            timestamp: new Date().toISOString(),
-            path: request.url,
-        });
+        const requestId = request.id || '-';
+        const isProduction = process.env.NODE_ENV === 'production';
+        this.logger.error(`[${requestId}] HTTP ${status} - ${Array.isArray(errorMessage) ? errorMessage[0] : errorMessage}`);
+        if (!isProduction && exception instanceof Error) {
+            this.logger.debug(exception.stack);
+        }
+        if (requestId !== '-') {
+            response.setHeader('X-Request-Id', requestId);
+        }
+        response.status(status).json(Object.assign({ statusCode: status, message: Array.isArray(errorMessage) ? errorMessage[0] : errorMessage, data: null, error: typeof message === 'object' ? message : { message }, timestamp: new Date().toISOString(), path: request.url }, (requestId !== '-' && { requestId })));
     }
 };
 exports.AllExceptionsFilter = AllExceptionsFilter;

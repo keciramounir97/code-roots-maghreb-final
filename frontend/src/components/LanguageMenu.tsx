@@ -21,7 +21,7 @@ const languageName = (locale: string) => {
 interface LanguageMenuProps {
   className?: string;
   buttonClassName?: string;
-  align?: "left" | "right";
+  align?: "left" | "right" | "up";
 }
 
 export default function LanguageMenu({
@@ -55,12 +55,16 @@ export default function LanguageMenu({
   }, [open]);
 
   const menuClass = useMemo(() => {
-    const bg = isDark ? "bg-[#3e2723]" : "bg-[#f8f5ef]";
-    const text = isDark ? "text-[#e8dfca]" : "text-[#2c1810]";
-    const border = isDark ? "border-[#3e2723]" : "border-[#e8dfca]";
-    const shadow = "shadow-[0_16px_40px_rgba(0,0,0,0.25)]";
-    const pos = align === "left" ? "left-0" : "right-0";
-    return `absolute ${pos} mt-2 w-48 rounded-md border ${border} ${bg} ${text} ${shadow} overflow-hidden z-[999]`;
+    const bg = isDark ? "bg-dark2" : "bg-paper-color";
+    const text = isDark ? "text-gray-200" : "text-primary-brown";
+    const border = isDark ? "border-white/10" : "border-secondary-brown/20";
+    const shadow = "shadow-2xl";
+
+    let pos = "right-0 mt-2";
+    if (align === "left") pos = "left-0 mt-2";
+    if (align === "up") pos = "left-0 bottom-full mb-2";
+
+    return `absolute ${pos} w-48 rounded-md border ${border} ${bg} ${text} ${shadow} overflow-hidden z-[999]`;
   }, [align, isDark]);
 
   const itemClass = useMemo(() => {

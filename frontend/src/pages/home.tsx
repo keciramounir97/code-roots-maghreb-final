@@ -15,7 +15,8 @@ import {
 } from "lucide-react";
 import { useTranslation } from "../context/TranslationContext";
 import { useState, useEffect } from "react";
-import { api } from "../lib/api";
+import { api } from "../api/client";
+import { getApiRoot, normalizeTree } from "../api/helpers";
 import TreesBuilder, { parseGedcom } from "../admin/components/TreesBuilder";
 import ErrorBoundary from "../components/ErrorBoundary";
 import MaghrebTribesMap from "../components/MaghrebTribesMap";
@@ -61,7 +62,7 @@ export default function Home() {
   const metaPanel =
     theme === "dark"
       ? "bg-white/5 border-white/10"
-      : "bg-[#5d4037]/5 border-[#d8c7b0]/60";
+      : "bg-primary-brown/5 border-[#d8c7b0]/60";
   const apiRoot = String(api.defaults.baseURL || "").replace(/\/api\/?$/, "");
   const downloadTreeUrl = (id: string | number) => `${apiRoot}/api/trees/${id}/gedcom`;
 
@@ -92,7 +93,10 @@ export default function Home() {
         }
         const { data } = await api.get("/trees");
         if (mounted && Array.isArray(data)) {
-          setFeaturedTrees(data.slice(0, 3));
+          const apiRootVal = getApiRoot();
+          setFeaturedTrees(
+            data.slice(0, 3).map((t) => normalizeTree(t, { apiRoot: apiRootVal, isPublic: true }))
+          );
         }
       } catch (err: any) {
         if (mounted) {
@@ -260,13 +264,13 @@ export default function Home() {
       </section>
 
       {/* ================== FAMILY TREE SECTION ================== */}
-      <section className="roots-section roots-section-alt mb-16">
-        <div className="max-w-6xl mx-auto space-y-10">
+      <section className="roots-section roots-section-alt mb-8 md:mb-12 lg:mb-16">
+        <div className="w-full max-w-7xl 2xl:max-w-[1600px] mx-auto space-y-6 md:space-y-10 px-2 sm:px-0">
           <div className="text-center">
             <h2 className="roots-heading">
               {t("family_tree_builder", "Family Tree Builder")}
             </h2>
-            <p className="max-w-3xl mx-auto text-lg opacity-90">
+            <p className="max-w-3xl mx-auto text-base sm:text-lg opacity-90 px-2 sm:px-0">
               Visualize your ancestry with a detailed interactive tree. Add
               generations, connect relatives, store historical documents, dates,
               photos and oral stories. Our builder supports Amazigh, Ottoman,
@@ -276,8 +280,27 @@ export default function Home() {
 
           {/* Featured Trees - Loading / Error */}
           {treesLoading && (
-            <div className="flex justify-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#5d4037]" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6 xl:gap-8">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className={`${cardBg} border ${borderColor} rounded-2xl shadow-xl overflow-hidden animate-pulse`}
+                >
+                  <div className="p-5 border-b border-white/5 space-y-3">
+                    <div className="h-3 w-1/3 bg-primary-brown/20 rounded" />
+                    <div className="h-6 w-2/3 bg-primary-brown/30 rounded" />
+                    <div className="h-3 w-1/4 bg-primary-brown/20 rounded" />
+                  </div>
+                  <div className="p-5 space-y-4">
+                    <div className="h-4 w-full bg-primary-brown/10 rounded" />
+                    <div className="h-4 w-3/4 bg-primary-brown/10 rounded" />
+                    <div className="flex gap-2 mt-6">
+                      <div className="h-10 w-24 bg-primary-brown/20 rounded-md" />
+                      <div className="h-10 w-32 bg-primary-brown/30 rounded-md" />
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
           {treesError && !treesLoading && (
@@ -285,25 +308,25 @@ export default function Home() {
               {treesError}
             </div>
           )}
-          {/* Featured Trees Grid */}
+          {/* Featured Trees Grid - responsive gaps for all viewports */}
           {featuredTrees.length > 0 && !treesLoading && (
-            <div className="grid md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6 xl:gap-8">
               {featuredTrees.map((tree) => {
                 const canDownload =
                   Number.isFinite(Number(tree.id)) && tree.hasGedcom;
                 return (
                   <div
                     key={tree.id}
-                    className={`${cardBg} border ${borderColor} rounded-2xl shadow-xl overflow-hidden`}
+                    className={`${cardBg} border ${borderColor} rounded-2xl shadow-xl overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 hover:border-accent-gold/40`}
                     data-aos="fade-up"
                   >
-                    <div className="p-5 border-b border-white/5 bg-gradient-to-r from-[#5d4037]/10 to-transparent">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="min-w-0">
-                          <p className="text-[10px] uppercase tracking-[0.3em] text-[#5d4037] opacity-70">
+                    <div className="p-4 sm:p-5 border-b border-white/5 bg-gradient-to-r from-primary-brown/10 to-transparent">
+                      <div className="flex items-start justify-between gap-3 sm:gap-4">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[10px] uppercase tracking-[0.3em] text-primary-brown opacity-70">
                             {t("trees", "Family Trees")}
                           </p>
-                          <h3 className="text-2xl font-bold truncate">
+                          <h3 className="text-lg sm:text-xl lg:text-2xl font-bold truncate">
                             {tree.title}
                           </h3>
                           <p className="text-sm opacity-70 flex items-center gap-1">
@@ -321,8 +344,8 @@ export default function Home() {
                       </div>
                     </div>
 
-                    <div className="p-5 space-y-4">
-                      <p className="text-sm opacity-80">
+                    <div className="p-4 sm:p-5 space-y-3 sm:space-y-4">
+                      <p className="text-sm opacity-80 line-clamp-3">
                         {tree.description ||
                           "Discover this public family lineage."}
                       </p>
@@ -331,7 +354,7 @@ export default function Home() {
                         <div
                           className={`${metaPanel} border rounded-xl p-3 flex items-start gap-2`}
                         >
-                          <Archive className="w-4 h-4 text-[#d4af37] mt-0.5" />
+                          <Archive className="w-4 h-4 text-accent-gold mt-0.5" />
                           <div>
                             <p className="text-[10px] uppercase opacity-60">
                               {t("archive_source", "Archive Source")}
@@ -345,7 +368,7 @@ export default function Home() {
                         <div
                           className={`${metaPanel} border rounded-xl p-3 flex items-start gap-2`}
                         >
-                          <FileText className="w-4 h-4 text-[#d4af37] mt-0.5" />
+                          <FileText className="w-4 h-4 text-accent-gold mt-0.5" />
                           <div>
                             <p className="text-[10px] uppercase opacity-60">
                               {t("document_code", "Document Code")}
@@ -365,23 +388,23 @@ export default function Home() {
                           : t("no_file", "No file")}
                       </div>
 
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-col sm:flex-row flex-wrap gap-2">
                         <button
                           type="button"
                           onClick={() => handleViewTree(tree)}
-                          className={`px-4 py-2 rounded-md border ${borderColor} hover:opacity-90 inline-flex items-center gap-2`}
+                          className={`px-4 py-2.5 rounded-md border ${borderColor} hover:opacity-90 inline-flex items-center justify-center gap-2 text-sm sm:text-base`}
                         >
-                          <Eye className="w-4 h-4" />
+                          <Eye className="w-4 h-4 shrink-0" />
                           {t("view_tree", "View Tree")}
                         </button>
                         {canDownload ? (
                           <a
                             href={downloadTreeUrl(tree.id)}
-                            className="px-4 py-2 rounded-md text-white font-medium bg-gradient-to-r from-[#5d4037] to-[#d4af37] hover:opacity-90 transition inline-flex items-center gap-2"
+                            className="px-4 py-2.5 rounded-md text-white font-medium bg-gradient-to-r from-primary-brown to-accent-gold hover:opacity-90 transition inline-flex items-center justify-center gap-2 text-sm sm:text-base"
                             target="_blank"
                             rel="noreferrer"
                           >
-                            <Download className="w-4 h-4" />
+                            <Download className="w-4 h-4 shrink-0" />
                             {t("download_gedcom", "Download GEDCOM")}
                           </a>
                         ) : null}
@@ -417,7 +440,7 @@ export default function Home() {
                 className="roots-card text-center"
                 data-aos="zoom-up"
               >
-                <item.icon className="w-12 h-12 mx-auto mb-4 text-[#5d4037]" />
+                <item.icon className="w-12 h-12 mx-auto mb-4 text-primary-brown" />
                 <h3 className="text-xl font-bold mb-2">{item.title}</h3>
                 <p className="opacity-90">{item.desc}</p>
               </div>
@@ -466,7 +489,7 @@ export default function Home() {
               },
             ].map((item, i) => (
               <div key={i} className="roots-card" data-aos="zoom-in">
-                <item.icon className="w-12 h-12 mx-auto mb-4 text-[#d4af37]" />
+                <item.icon className="w-12 h-12 mx-auto mb-4 text-accent-gold" />
                 <h3 className="text-xl font-bold mb-3">{item.title}</h3>
                 <p className="opacity-90">{item.desc}</p>
               </div>
@@ -571,9 +594,9 @@ export default function Home() {
             className={`bg-white dark:bg-[#2c1810] w-full max-w-[90vw] h-[90vh] rounded-lg shadow-2xl border border-[#e8dfca] flex flex-col overflow-hidden relative`}
           >
             {/* Header */}
-            <div className="p-4 border-b border-[#d4af37]/30 flex items-center justify-between bg-[#f8f5ef] dark:bg-[#3e2723]">
+            <div className="p-4 border-b border-accent-gold/30 flex items-center justify-between bg-paper-color dark:bg-leather-brown">
               <div>
-                <h2 className="text-xl font-bold flex items-center gap-2 text-[#5d4037] dark:text-[#d4af37]">
+                <h2 className="text-xl font-bold flex items-center gap-2 text-primary-brown dark:text-accent-gold">
                   <Users className="w-5 h-5" />
                   {viewTree.title}
                 </h2>
@@ -588,16 +611,16 @@ export default function Home() {
             </div>
 
             {/* Canvas Content */}
-            <div className="flex-1 relative bg-[#f5f1e8] dark:bg-[#1a0a05] overflow-hidden">
+            <div className="flex-1 relative bg-light-beige dark:bg-dark-coffee overflow-hidden">
               {viewLoading ? (
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#5d4037]"></div>
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-brown"></div>
                 </div>
               ) : (
                 <ErrorBoundary
                   fallback={({ error, reset }) => (
                     <div className="absolute inset-0 flex items-center justify-center p-6">
-                      <div className="rounded-lg border border-[#e8dfca] bg-white/90 px-6 py-5 text-sm text-[#5d4037] shadow-xl">
+                      <div className="rounded-lg border border-dark-beige bg-white/90 px-6 py-5 text-sm text-primary-brown shadow-xl">
                         <div className="font-semibold">
                           {t("tree_builder_error", "Tree builder failed to load.")}
                         </div>

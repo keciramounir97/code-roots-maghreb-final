@@ -18,6 +18,8 @@ const auth_service_1 = require("./auth.service");
 const jwt_auth_guard_1 = require("./guards/jwt-auth.guard");
 const login_dto_1 = require("./dto/login.dto");
 const signup_dto_1 = require("./dto/signup.dto");
+const request_reset_dto_1 = require("./dto/request-reset.dto");
+const verify_reset_dto_1 = require("./dto/verify-reset.dto");
 let AuthController = class AuthController {
     constructor(authService) {
         this.authService = authService;
@@ -33,7 +35,13 @@ let AuthController = class AuthController {
         return this.authService.signup(signupDto);
     }
     async refresh(body) {
-        return this.authService.refreshToken(body.refreshToken);
+        return this.authService.refreshToken(body === null || body === void 0 ? void 0 : body.refreshToken);
+    }
+    async verifyReset(dto) {
+        return this.authService.verifyReset(dto.email, dto.code, dto.newPassword);
+    }
+    async requestReset(dto) {
+        return this.authService.requestReset(dto.email);
     }
     async logout(req) {
         return this.authService.logout(req.user.id);
@@ -67,6 +75,22 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "refresh", null);
 __decorate([
+    (0, common_1.Post)('reset/verify'),
+    (0, common_1.HttpCode)(200),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [verify_reset_dto_1.VerifyResetDto]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "verifyReset", null);
+__decorate([
+    (0, common_1.Post)('reset'),
+    (0, common_1.HttpCode)(200),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [request_reset_dto_1.RequestResetDto]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "requestReset", null);
+__decorate([
     (0, common_1.Post)('logout'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.HttpCode)(200),
@@ -84,7 +108,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "me", null);
 exports.AuthController = AuthController = __decorate([
-    (0, common_1.Controller)('api/auth'),
+    (0, common_1.Controller)('auth'),
     __metadata("design:paramtypes", [auth_service_1.AuthService])
 ], AuthController);
 //# sourceMappingURL=auth.controller.js.map

@@ -4,7 +4,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 
-@Controller('api')
+@Controller()
 export class StatsController {
     constructor(private readonly statsService: StatsService) { }
 

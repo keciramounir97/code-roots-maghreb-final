@@ -4,7 +4,7 @@ import { MailerService } from '../../common/mailer/mailer.service';
 import { ConfigService } from '@nestjs/config';
 import { ContactDto } from './dto/contact.dto';
 
-@Controller('api')
+@Controller()
 export class ContactController {
     constructor(
         private readonly mailerService: MailerService,
@@ -13,23 +13,25 @@ export class ContactController {
 
     @Post('contact')
     async sendContact(@Body() body: ContactDto) {
+        const { name, email, message } = body;
+        const from = this.configService.get<string>('EMAIL_FROM') || this.configService.get<string>('SMTP_USER');
+        const to = this.configService.get<string>('SMTP_USER');
+        if (!from || !to) {
+            return { message: 'Message received. Email delivery is temporarily unavailable.' };
+        }
         try {
-            const { name, email, message } = body;
-            const safeName = name;
-            const safeEmail = email;
             const safeMessage = message ? message.replace(/\n/g, '<br>') : '';
-
-            const from = this.configService.get<string>('EMAIL_FROM');
-            const to = this.configService.get<string>('SMTP_USER');
+            const safeName = String(name ?? '').trim();
+            const safeEmail = String(email ?? '').trim();
 
             await this.mailerService.sendMail({
-                from: from,
-                to: to,
-                replyTo: email,
-                subject: `New Contact Message from ${name}`,
+                from: String(from),
+                to: String(to),
+                replyTo: safeEmail,
+                subject: `New Contact Message from ${safeName}`,
                 text: `
-          Name: ${name}
-          Email: ${email}
+          Name: ${safeName}
+          Email: ${safeEmail}
           Message:
           ${message}
         `,
@@ -46,8 +48,8 @@ export class ContactController {
 
             return { message: 'Message sent successfully' };
         } catch (err) {
-            console.error(err);
-            throw new InternalServerErrorException('Failed to send message');
+            console.error('Contact form mail error:', err?.message || err);
+            return { message: 'Message received. Email delivery may be delayed.' };
         }
     }
 }

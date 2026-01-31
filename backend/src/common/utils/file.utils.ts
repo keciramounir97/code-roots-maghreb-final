@@ -26,30 +26,19 @@ export const PRIVATE_TREE_UPLOADS_DIR = path.join(PRIVATE_UPLOADS_DIR, 'trees');
 });
 
 export const resolveStoredFilePath = (storedPath: string): string | null => {
-    const rel = String(storedPath || '');
+    const rel = String(storedPath || '').trim();
     if (!rel) return null;
 
     if (rel.startsWith('/uploads/')) {
-        // /uploads/books/foo.pdf -> uploads/books/foo.pdf
-        return path.join(UPLOADS_DIR, '..', rel);
-        // Wait, UPLOADS_DIR is .../uploads. If rel is /uploads/x, we need to join root + rel.
-        // Let's assume UPLOADS_DIR is absolute path to uploads folder.
-        // If rel is /uploads/foo, and we are at backend root.
-        // Best way: strip /uploads/ prefix and join with UPLOADS_DIR
-    }
-
-    // Re-implementing logic from original file to be safe
-    if (rel.startsWith('/uploads/')) {
-        const relative = rel.replace('/uploads/', '');
+        const relative = rel.replace(/^\/uploads\/?/, '');
         return path.join(UPLOADS_DIR, relative);
     }
-
     if (rel.startsWith('private/')) {
-        return path.join(PRIVATE_UPLOADS_DIR, rel.replace('private/', ''));
+        const relative = rel.replace(/^private\/?/, '');
+        return path.join(PRIVATE_UPLOADS_DIR, relative);
     }
-
     if (path.isAbsolute(rel)) return rel;
-    return path.join(__dirname, '..', '..', '..', rel);
+    return path.join(path.dirname(UPLOADS_DIR), rel.replace(/^\//, ''));
 };
 
 export const safeUnlink = (filePath: string) => {

@@ -8,7 +8,7 @@ import {
   useState,
   ReactNode,
 } from "react";
-import { api } from "../../lib/api";
+import { api } from "../../api/client";
 
 export interface User {
   id: number;
@@ -24,6 +24,7 @@ export interface User {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  isAdmin: boolean;
   signup: (fullName: string, phone: string | undefined, email: string, password: string) => Promise<any>;
   login: (email: string, password: string) => Promise<User>;
   requestReset: (email: string) => Promise<any>;
@@ -43,6 +44,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .trim()
       .toLowerCase();
 
+  const normalizeUser = (raw: any): User | null => {
+    if (!raw) return null;
+    const roleId = raw.roleId ?? raw.role_id ?? raw.role;
+    return {
+      ...raw,
+      role: typeof roleId === "number" ? roleId : Number(roleId) || 0,
+    };
+  };
+
   const refreshMe = useCallback(async () => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -52,8 +62,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       const res = await api.get("/auth/me");
-      setUser(res.data);
-      return res.data;
+      const data = res.data.data || res.data;
+      const user = normalizeUser(data);
+      setUser(user);
+      return user;
     } catch {
       localStorage.removeItem("token");
       setUser(null);
@@ -109,14 +121,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: normalizeEmail(email),
       password,
     });
-    localStorage.setItem("token", res.data.token);
-    if (res.data.refreshToken) {
-      localStorage.setItem("refreshToken", res.data.refreshToken);
+    // Backend returns wrapped response: { data: { token, user, ... } }
+    const data = res.data.data || res.data;
+    localStorage.setItem("token", data.token);
+    if (data.refreshToken) {
+      localStorage.setItem("refreshToken", data.refreshToken);
     }
 
-    setUser(res.data.user);
-
-    return res.data.user;
+    const user = normalizeUser(data.user);
+    setUser(user);
+    return user;
   };
 
   /* PASSWORD RESET */
@@ -143,11 +157,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const isAdmin = !!(user && (user.role === 1 || user.role === 3));
+
   return (
     <AuthContext.Provider
       value={{
         user,
         loading,
+        isAdmin,
         signup,
         login,
         requestReset,

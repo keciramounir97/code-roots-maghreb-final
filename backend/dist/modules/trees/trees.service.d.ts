@@ -9,8 +9,8 @@ export declare class TreesService {
     listByUser(userId: number): Promise<Tree[]>;
     listAdmin(): Promise<Tree[]>;
     findOne(id: number): Promise<Tree>;
-    create(data: any, userId: number, file: Express.Multer.File): Promise<Tree>;
-    update(id: number, data: any, userId: number, userRole: number, file: Express.Multer.File): Promise<{
+    create(data: any, userId: number, file?: Express.Multer.File): Promise<Tree>;
+    update(id: number, data: any, userId: number, userRole: number, file?: Express.Multer.File): Promise<{
         id: number;
     }>;
     delete(id: number, userId: number, userRole: number): Promise<{

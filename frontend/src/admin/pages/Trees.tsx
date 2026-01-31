@@ -19,6 +19,7 @@ import { useThemeStore } from "../../store/theme";
 import { api } from "../../api/client";
 import {
   getApiErrorMessage,
+  normalizeTree,
   requestWithFallback,
   shouldFallbackRoute,
 } from "../../api/helpers";
@@ -37,18 +38,7 @@ import { useAuth } from "../components/AuthContext";
 
 const MAX_GEDCOM_BYTES = 50 * 1024 * 1024;
 
-const normalizeOwner = (tree) => {
-  if (!tree) return tree;
-
-  const ownerRaw = tree.owner ?? tree.owner_name ?? "";
-
-  const owner =
-    ownerRaw && typeof ownerRaw === "object"
-      ? ownerRaw.fullName || ownerRaw.email || ""
-      : ownerRaw || "";
-
-  return { ...tree, owner };
-};
+const normalizeOwner = (tree) => normalizeTree(tree);
 
 const buildMockTrees = () =>
   Array.from({ length: 10 }).map((_, i) => ({
@@ -70,7 +60,7 @@ export default function Trees() {
 
   const isDark = theme === "dark";
 
-  const isAdmin = user?.role === 1;
+  const isAdmin = user?.role === 1 || user?.role === 3;
 
   const pageBg = isDark ? "bg-[#3e2723]" : "bg-[#f5f1e8]";
   const text = isDark ? "text-white" : "text-[#6c5249]";
@@ -189,8 +179,7 @@ export default function Trees() {
         const mine = mineRes.value?.data;
 
         const myList = mergeById([
-          ...(Array.isArray(mine) ? mine.map(normalizeOwner) : []),
-
+          ...(Array.isArray(mine) ? mine.map((t) => normalizeTree(t, { isPublic: !!t?.is_public || !!t?.isPublic })) : []),
           ...mockTrees,
         ]);
 
@@ -205,8 +194,7 @@ export default function Trees() {
         const pub = pubRes.value?.data;
 
         const publicList = mergeById([
-          ...(Array.isArray(pub) ? pub.map(normalizeOwner) : []),
-
+          ...(Array.isArray(pub) ? pub.map((t) => normalizeTree(t, { isPublic: true })) : []),
           ...mockTrees.filter((t) => t.isPublic),
         ]);
 
@@ -767,6 +755,8 @@ export default function Trees() {
         peopleDirtyRef.current = false;
 
         autoSavePeopleRef.current = null;
+
+        refreshLists();
       }
     } catch (err) {
       setSaveError(getApiErrorMessage(err, "Auto-save failed"));
@@ -941,7 +931,13 @@ export default function Trees() {
     setSaveSuccess("");
 
     try {
-      await api.delete(`/my/trees/${selectedTree.id}`);
+      await requestWithFallback(
+        [
+          () => api.delete(`/admin/trees/${selectedTree.id}`),
+          () => api.delete(`/my/trees/${selectedTree.id}`),
+        ],
+        (e) => e?.response?.status === 403 || e?.response?.status === 404
+      );
 
       setMyTrees((prev) =>
         prev.filter((t) => String(t.id) !== String(deletedId))

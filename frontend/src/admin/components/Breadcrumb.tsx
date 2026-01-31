@@ -3,11 +3,12 @@ import { ChevronRight, Home } from "lucide-react";
 import { useThemeStore } from "../../store/theme";
 import { useTranslation } from "../../context/TranslationContext";
 
-const LABELS = {
+const LABELS: Record<string, string> = {
   admin: "Admin",
   users: "Users",
   books: "Books",
   trees: "Family Trees",
+  gallery: "Gallery",
   settings: "Settings",
   activity: "Activity",
 };
@@ -22,7 +23,7 @@ export default function Breadcrumb() {
 
   const segments = parts.map((p, i) => ({
     raw: p,
-    label: t(p) || LABELS[p] || p,
+    label: t(p) || LABELS[p] || p.charAt(0).toUpperCase() + p.slice(1),
     to: "/" + parts.slice(0, i + 1).join("/"),
   }));
 

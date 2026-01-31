@@ -74,7 +74,7 @@ let BooksService = class BooksService {
             filePath = `private/books/${bookFile.filename}`;
         }
         const coverPath = coverFile ? `/uploads/books/${coverFile.filename}` : null;
-        const newBook = await Book_1.Book.query(this.knex).insert({
+        const newBook = await Book_1.Book.query(this.knex).insertAndFetch({
             title: data.title,
             author: data.author,
             description: data.description,
@@ -94,7 +94,10 @@ let BooksService = class BooksService {
     async update(id, data, userId, userRole, files) {
         var _a, _b;
         const book = await this.findOne(id);
-        if (userRole !== 1 && userRole !== 3 && book.uploaded_by !== userId) {
+        const roleId = Number(userRole !== null && userRole !== void 0 ? userRole : 0);
+        const isAdmin = roleId === 1 || roleId === 3;
+        const isOwner = book.uploaded_by === userId;
+        if (!isAdmin && !isOwner) {
             throw new common_1.ForbiddenException('Forbidden');
         }
         const updateData = {};
@@ -110,8 +113,10 @@ let BooksService = class BooksService {
             updateData.archive_source = data.archiveSource;
         if (data.documentCode !== undefined)
             updateData.document_code = data.documentCode;
-        const isPublic = data.isPublic !== undefined ? (data.isPublic === 'true' || data.isPublic === true) : book.is_public;
-        updateData.is_public = isPublic;
+        const isPublic = data.isPublic !== undefined
+            ? (data.isPublic === 'true' || data.isPublic === true || data.isPublic === 1)
+            : !!book.is_public;
+        updateData.is_public = Boolean(isPublic);
         const bookFile = (_a = files === null || files === void 0 ? void 0 : files.file) === null || _a === void 0 ? void 0 : _a[0];
         if (bookFile) {
             const oldPath = (0, file_utils_1.resolveStoredFilePath)(book.file_path);
@@ -153,7 +158,10 @@ let BooksService = class BooksService {
     }
     async delete(id, userId, userRole) {
         const book = await this.findOne(id);
-        if (userRole !== 1 && userRole !== 3 && book.uploaded_by !== userId) {
+        const roleId = Number(userRole !== null && userRole !== void 0 ? userRole : 0);
+        const isAdmin = roleId === 1 || roleId === 3;
+        const isOwner = book.uploaded_by === userId;
+        if (!isAdmin && !isOwner) {
             throw new common_1.ForbiddenException('Forbidden');
         }
         if (book.file_path)

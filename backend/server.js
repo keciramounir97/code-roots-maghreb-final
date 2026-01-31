@@ -1,16 +1,10 @@
-const path = require('path');
-const fs = require('fs');
+/**
+ * ROOTS MAGHREB - PRODUCTION ENTRY POINT (cPanel / Phusion Passenger)
+ */
 
-// Verify dist/main.js exists
-const distMain = path.join(__dirname, 'dist', 'main.js');
+// Passenger provides the PORT environment variable automatically.
+// Our NestJS app is configured to listen on process.env.PORT in main.ts.
 
-if (fs.existsSync(distMain)) {
-  // Production mode: run compiled code
-  require(distMain);
-} else {
-  // Fallback or Dev mode
-  // If we are in passenger, we might need to rely on pre-built code.
-  // But if this is a raw start, we might try ts-node but ideally we stick to dist
-  console.error("DIST folder not found! Please run 'npm run build' first.");
-  process.exit(1);
-}
+// We import the compiled main file.
+// If your build structure is different, adjust this path.
+require('./dist/main.js');

@@ -33,7 +33,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], StatsController.prototype, "getStats", null);
 exports.StatsController = StatsController = __decorate([
-    (0, common_1.Controller)('api'),
+    (0, common_1.Controller)(),
     __metadata("design:paramtypes", [stats_service_1.StatsService])
 ], StatsController);
 //# sourceMappingURL=stats.controller.js.map

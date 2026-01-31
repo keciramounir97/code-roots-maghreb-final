@@ -16,7 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { api } from "../api/client";
-import { getApiErrorMessage, getApiRoot } from "../api/helpers";
+import { getApiErrorMessage, getApiRoot, normalizeTree } from "../api/helpers";
 import { useTranslation } from "../context/TranslationContext";
 import RootsPageShell from "../components/RootsPageShell";
 import TreesBuilder, { parseGedcom } from "../admin/components/TreesBuilder";
@@ -70,9 +70,10 @@ export default function GenealogyGallery() {
 
         if (!mounted) return;
 
+        const apiRootVal = getApiRoot();
         let nextTrees =
           treesRes.status === 200 && Array.isArray(treesRes.data)
-            ? treesRes.data
+            ? treesRes.data.map((t) => normalizeTree(t, { apiRoot: apiRootVal, isPublic: true }))
             : [];
 
         const treesErrorMessage =
@@ -105,7 +106,7 @@ export default function GenealogyGallery() {
   };
 
   const downloadTreeUrl = (id) => {
-    return `${apiRoot}/trees/${id}/gedcom`;
+    return `${apiRoot}/api/trees/${id}/gedcom`;
   };
 
   const filteredTrees = useMemo(() => {

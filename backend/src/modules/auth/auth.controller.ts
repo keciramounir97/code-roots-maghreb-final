@@ -4,8 +4,10 @@ import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { LoginDto } from './dto/login.dto';
 import { SignupDto } from './dto/signup.dto';
+import { RequestResetDto } from './dto/request-reset.dto';
+import { VerifyResetDto } from './dto/verify-reset.dto';
 
-@Controller('api/auth')
+@Controller('auth')
 export class AuthController {
     constructor(private authService: AuthService) { }
 
@@ -26,8 +28,20 @@ export class AuthController {
 
     @Post('refresh')
     @HttpCode(200)
-    async refresh(@Body() body: { refreshToken: string }) {
-        return this.authService.refreshToken(body.refreshToken); // DTO likely overkill for single field but good practice
+    async refresh(@Body() body: { refreshToken?: string }) {
+        return this.authService.refreshToken(body?.refreshToken);
+    }
+
+    @Post('reset/verify')
+    @HttpCode(200)
+    async verifyReset(@Body() dto: VerifyResetDto) {
+        return this.authService.verifyReset(dto.email, dto.code, dto.newPassword);
+    }
+
+    @Post('reset')
+    @HttpCode(200)
+    async requestReset(@Body() dto: RequestResetDto) {
+        return this.authService.requestReset(dto.email);
     }
 
     @Post('logout')

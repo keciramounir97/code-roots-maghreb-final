@@ -2,16 +2,16 @@ import { Controller, Get } from '@nestjs/common';
 import { Inject } from '@nestjs/common';
 import { Knex } from 'knex';
 
-@Controller('api')
+@Controller()
 export class HealthController {
-    constructor(@Inject('KnexConnection') private readonly knex: Knex) {}
+    constructor(@Inject('KnexConnection') private readonly knex: Knex) { }
 
     @Get('health')
     async health() {
         try {
             // Test database connectivity
             await this.knex.raw('SELECT 1');
-            
+
             return {
                 status: 'healthy',
                 timestamp: new Date().toISOString(),

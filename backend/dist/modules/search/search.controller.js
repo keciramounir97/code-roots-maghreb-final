@@ -45,7 +45,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], SearchController.prototype, "search", null);
 exports.SearchController = SearchController = __decorate([
-    (0, common_1.Controller)('api'),
+    (0, common_1.Controller)(),
     __metadata("design:paramtypes", [search_service_1.SearchService])
 ], SearchController);
 //# sourceMappingURL=search.controller.js.map

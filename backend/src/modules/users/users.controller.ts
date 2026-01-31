@@ -6,7 +6,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CreateUserDto, UpdateUserDto } from './dto/user.dto';
 
-@Controller('api/admin/users')
+@Controller('admin/users')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('admin', 'super_admin')
 export class UsersController {

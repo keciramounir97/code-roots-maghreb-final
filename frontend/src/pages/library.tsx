@@ -20,7 +20,7 @@ import {
   X,
 } from "lucide-react";
 import { api } from "../api/client";
-import { getApiErrorMessage, getApiRoot } from "../api/helpers";
+import { getApiErrorMessage, getApiRoot, normalizeTree } from "../api/helpers";
 import { useTranslation } from "../context/TranslationContext";
 import RootsPageShell from "../components/RootsPageShell";
 import TreesBuilder, { parseGedcom } from "../admin/components/TreesBuilder";
@@ -110,9 +110,10 @@ export default function Library() {
           else if (Array.isArray(d)) nextBooks = d;
         }
 
+        const apiRootVal = getApiRoot();
         let nextTrees =
           treesRes.status === "fulfilled" && Array.isArray(treesRes.value?.data)
-            ? treesRes.value.data
+            ? treesRes.value.data.map((t) => normalizeTree(t, { apiRoot: apiRootVal, isPublic: true }))
             : [];
         let nextGallery = [];
         if (galleryRes.status === "fulfilled") {
@@ -438,9 +439,8 @@ export default function Library() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={t("search_library", "Search books, trees, images...")}
-                className={`w-full pl-10 py-3 rounded-md bg-transparent border ${borderColor} outline-none ${
-                  theme === "dark" ? "text-white" : "text-[#2c1810]"
-                }`}
+                className={`w-full pl-10 py-3 rounded-md bg-transparent border ${borderColor} outline-none ${theme === "dark" ? "text-white" : "text-[#2c1810]"
+                  }`}
               />
             </div>
             <div className="flex items-center gap-3">
@@ -448,9 +448,8 @@ export default function Library() {
               <select
                 value={typeFilter}
                 onChange={(e) => setTypeFilter(e.target.value)}
-                className={`w-full px-4 py-3 rounded-md bg-transparent border ${borderColor} outline-none ${
-                  theme === "dark" ? "text-white" : "text-[#2c1810]"
-                }`}
+                className={`w-full px-4 py-3 rounded-md bg-transparent border ${borderColor} outline-none ${theme === "dark" ? "text-white" : "text-[#2c1810]"
+                  }`}
               >
                 <option value="all">{t("all_content", "All content")}</option>
                 <option value="books">{t("books", "Books")}</option>
@@ -463,9 +462,8 @@ export default function Library() {
               <select
                 value={bookCategory}
                 onChange={(e) => setBookCategory(e.target.value)}
-                className={`w-full px-4 py-3 rounded-md bg-transparent border ${borderColor} outline-none ${
-                  theme === "dark" ? "text-white" : "text-[#2c1810]"
-                }`}
+                className={`w-full px-4 py-3 rounded-md bg-transparent border ${borderColor} outline-none ${theme === "dark" ? "text-white" : "text-[#2c1810]"
+                  }`}
               >
                 <option value="all">
                   {t("all_categories", "All Categories")}
@@ -484,9 +482,8 @@ export default function Library() {
               <select
                 value={treeFilter}
                 onChange={(e) => setTreeFilter(e.target.value)}
-                className={`w-full px-4 py-2 rounded-md bg-transparent border ${borderColor} outline-none ${
-                  theme === "dark" ? "text-white" : "text-[#2c1810]"
-                }`}
+                className={`w-full px-4 py-2 rounded-md bg-transparent border ${borderColor} outline-none ${theme === "dark" ? "text-white" : "text-[#2c1810]"
+                  }`}
               >
                 <option value="all">{t("all_trees", "All Trees")}</option>
                 <option value="with-gedcom">
@@ -499,9 +496,8 @@ export default function Library() {
               <select
                 value={imageLocation}
                 onChange={(e) => setImageLocation(e.target.value)}
-                className={`w-full px-4 py-2 rounded-md bg-transparent border ${borderColor} outline-none ${
-                  theme === "dark" ? "text-white" : "text-[#2c1810]"
-                }`}
+                className={`w-full px-4 py-2 rounded-md bg-transparent border ${borderColor} outline-none ${theme === "dark" ? "text-white" : "text-[#2c1810]"
+                  }`}
               >
                 <option value="all">{t("all_locations", "All Locations")}</option>
                 {locations.map((loc) => (
@@ -516,9 +512,8 @@ export default function Library() {
               <select
                 value={imageYear}
                 onChange={(e) => setImageYear(e.target.value)}
-                className={`w-full px-4 py-2 rounded-md bg-transparent border ${borderColor} outline-none ${
-                  theme === "dark" ? "text-white" : "text-[#2c1810]"
-                }`}
+                className={`w-full px-4 py-2 rounded-md bg-transparent border ${borderColor} outline-none ${theme === "dark" ? "text-white" : "text-[#2c1810]"
+                  }`}
               >
                 <option value="all">{t("all_years", "All Years")}</option>
                 {years.map((yr) => (
@@ -881,9 +876,9 @@ export default function Library() {
             >
               {galleryError
                 ? t(
-                    "images_unavailable",
-                    "Images are temporarily unavailable."
-                  )
+                  "images_unavailable",
+                  "Images are temporarily unavailable."
+                )
                 : t("no_photos_available", "No photos available yet")}
             </div>
           ) : (

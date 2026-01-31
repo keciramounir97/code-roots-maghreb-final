@@ -56,11 +56,15 @@ export class AuthService {
     }
 
     async signup(data: any) {
-        const user = await this.usersService.create(data, null); // null adminId for self-signup
+        const payload = { ...data, full_name: data.full_name ?? data.fullName };
+        const user = await this.usersService.create(payload, null); // null adminId for self-signup
         return this.login(user);
     }
 
     async refreshToken(token: string) {
+        if (!token || typeof token !== 'string') {
+            throw new UnauthorizedException('Refresh token is required');
+        }
         const storedToken = await RefreshToken.query(this.knex)
             .findOne({ token })
             .withGraphFetched('user');
@@ -68,11 +72,16 @@ export class AuthService {
         if (!storedToken || new Date(storedToken.expires_at) < new Date()) {
             throw new UnauthorizedException('Invalid or expired refresh token');
         }
+        const user = storedToken.user;
+        if (!user) {
+            await RefreshToken.query(this.knex).deleteById(storedToken.id);
+            throw new UnauthorizedException('User no longer exists');
+        }
 
         const payload = {
-            sub: storedToken.user.id,
-            email: storedToken.user.email,
-            role: storedToken.user.role_id
+            sub: user.id,
+            email: user.email,
+            role: user.role_id
         };
 
         // Rotate refresh token
@@ -83,7 +92,7 @@ export class AuthService {
         await RefreshToken.query(this.knex).deleteById(storedToken.id);
         await RefreshToken.query(this.knex).insert({
             token: newRefreshToken,
-            user_id: storedToken.user.id,
+            user_id: user.id,
             expires_at: expiresAt.toISOString().slice(0, 19).replace('T', ' '),
         });
 
@@ -97,5 +106,51 @@ export class AuthService {
         await RefreshToken.query(this.knex).delete().where('user_id', userId);
         await this.activityService.log(userId, 'security', 'User logged out');
         return { message: 'Logged out' };
+    }
+
+    async requestReset(email: string) {
+        const normalized = String(email ?? '').trim().toLowerCase();
+        if (!normalized) {
+            throw new BadRequestException('Email is required');
+        }
+        const user = await this.usersService.findByEmail(normalized);
+        if (!user) return { message: 'If the email exists, a reset link will be sent.' };
+        const code = crypto.randomBytes(6).toString('hex');
+        const codeHash = await bcrypt.hash(code, 10);
+        await this.knex('password_resets').del().where('email', normalized);
+        await this.knex('password_resets').insert({
+            email: normalized,
+            code_hash: codeHash,
+            expires_at: this.knex.raw('DATE_ADD(NOW(), INTERVAL 15 MINUTE)'),
+        });
+        // TODO: send email via MailerService
+        return { message: 'If the email exists, a reset code will be sent.', code: process.env.NODE_ENV === 'development' ? code : undefined };
+    }
+
+    async verifyReset(email: string, code: string, newPassword: string) {
+        const normalizedEmail = String(email ?? '').trim().toLowerCase();
+        const trimmedCode = String(code ?? '').trim();
+        const pass = String(newPassword ?? '');
+
+        if (!normalizedEmail || !trimmedCode || !pass) {
+            throw new BadRequestException('Email, code, and new password are required');
+        }
+        if (pass.length < 6) {
+            throw new BadRequestException('Password must be at least 6 characters');
+        }
+        const row = await this.knex('password_resets')
+            .where('email', normalizedEmail)
+            .where('expires_at', '>', this.knex.fn.now())
+            .first();
+        if (!row) {
+            await this.knex('password_resets').del().where('email', normalizedEmail);
+            throw new BadRequestException('Invalid or expired reset code');
+        }
+        const valid = await bcrypt.compare(trimmedCode, row.code_hash);
+        if (!valid) throw new BadRequestException('Invalid reset code');
+        const hash = await bcrypt.hash(pass, 10);
+        await this.knex('users').where('email', normalizedEmail).update({ password: hash });
+        await this.knex('password_resets').del().where('email', normalizedEmail);
+        return { message: 'Password reset successful' };
     }
 }

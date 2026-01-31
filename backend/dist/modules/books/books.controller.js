@@ -55,10 +55,14 @@ let BooksController = class BooksController {
         return this.booksService.create(body, req.user.id, files);
     }
     async updateMy(id, body, req, files) {
-        return this.booksService.update(id, body, req.user.id, req.user.role_id, files);
+        var _a, _b, _c, _d, _e;
+        const userRole = (_d = (_b = (_a = req.user) === null || _a === void 0 ? void 0 : _a.role_id) !== null && _b !== void 0 ? _b : (_c = req.user) === null || _c === void 0 ? void 0 : _c.roleId) !== null && _d !== void 0 ? _d : (_e = req.user) === null || _e === void 0 ? void 0 : _e.role;
+        return this.booksService.update(id, body, req.user.id, userRole, files);
     }
     async deleteMy(id, req) {
-        return this.booksService.delete(id, req.user.id, req.user.role_id);
+        var _a, _b, _c, _d, _e;
+        const userRole = (_d = (_b = (_a = req.user) === null || _a === void 0 ? void 0 : _a.role_id) !== null && _b !== void 0 ? _b : (_c = req.user) === null || _c === void 0 ? void 0 : _c.roleId) !== null && _d !== void 0 ? _d : (_e = req.user) === null || _e === void 0 ? void 0 : _e.role;
+        return this.booksService.delete(id, req.user.id, userRole);
     }
     async downloadMy(id, res, req) {
         const book = await this.booksService.findOne(id);
@@ -73,14 +77,21 @@ let BooksController = class BooksController {
     async listAdmin() {
         return this.booksService.listAdmin();
     }
+    async getAdmin(id) {
+        return this.booksService.findOne(id);
+    }
     async createAdmin(body, req, files) {
         return this.booksService.create(body, req.user.id, files);
     }
     async updateAdmin(id, body, req, files) {
-        return this.booksService.update(id, body, req.user.id, req.user.role_id, files);
+        var _a, _b, _c, _d, _e;
+        const userRole = (_d = (_b = (_a = req.user) === null || _a === void 0 ? void 0 : _a.role_id) !== null && _b !== void 0 ? _b : (_c = req.user) === null || _c === void 0 ? void 0 : _c.roleId) !== null && _d !== void 0 ? _d : (_e = req.user) === null || _e === void 0 ? void 0 : _e.role;
+        return this.booksService.update(id, body, req.user.id, userRole, files);
     }
     async deleteAdmin(id, req) {
-        return this.booksService.delete(id, req.user.id, req.user.role_id);
+        var _a, _b, _c, _d, _e;
+        const userRole = (_d = (_b = (_a = req.user) === null || _a === void 0 ? void 0 : _a.role_id) !== null && _b !== void 0 ? _b : (_c = req.user) === null || _c === void 0 ? void 0 : _c.roleId) !== null && _d !== void 0 ? _d : (_e = req.user) === null || _e === void 0 ? void 0 : _e.role;
+        return this.booksService.delete(id, req.user.id, userRole);
     }
 };
 exports.BooksController = BooksController;
@@ -179,6 +190,15 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], BooksController.prototype, "listAdmin", null);
 __decorate([
+    (0, common_1.Get)('admin/books/:id'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('admin', 'super_admin'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], BooksController.prototype, "getAdmin", null);
+__decorate([
     (0, common_1.Post)('admin/books'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     (0, roles_decorator_1.Roles)('admin', 'super_admin'),
@@ -220,7 +240,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], BooksController.prototype, "deleteAdmin", null);
 exports.BooksController = BooksController = __decorate([
-    (0, common_1.Controller)('api'),
+    (0, common_1.Controller)(),
     __metadata("design:paramtypes", [books_service_1.BooksService])
 ], BooksController);
 //# sourceMappingURL=books.controller.js.map

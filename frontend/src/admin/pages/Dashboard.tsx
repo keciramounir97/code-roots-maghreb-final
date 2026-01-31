@@ -11,28 +11,27 @@ import { api } from "../../api/client";
 
 /* -------------------- STAT CARD -------------------- */
 function StatCard({ title, value, color, Icon, isDark }) {
-  const cardBg = isDark ? "bg-[#3e2723]" : "bg-white";
-  const border = isDark ? "border-[#2c1810]" : "border-[#e8dfca]";
-  const hover = isDark ? "hover:bg-white/5" : "hover:bg-[#5d4037]/5";
+  const cardBg = isDark ? "bg-[#2c1810]" : "bg-white";
+  const border = isDark ? "border-[#3e2723]" : "border-[#e8dfca]";
+  const hover = isDark ? "hover:bg-white/5 hover:shadow-lg" : "hover:bg-[#5d4037]/5 hover:shadow-lg";
 
   return (
     <div
-      className={`rounded-lg shadow-sm p-5 border transition ${cardBg} ${border} ${hover}`}
+      className={`rounded-xl shadow-md p-5 sm:p-6 border transition-all duration-300 ${cardBg} ${border} ${hover}`}
     >
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="text-sm opacity-70">{title}</div>
+      <div className="flex items-center justify-between gap-4">
+        <div className="min-w-0">
+          <div className="text-sm font-medium opacity-75 truncate">{title}</div>
           <div
-            className="text-3xl font-extrabold mt-1"
+            className="text-2xl sm:text-3xl font-extrabold mt-1 tabular-nums"
             style={{ color }}
           >
             {value}
           </div>
         </div>
-
         <div
-          className="w-12 h-12 rounded-lg flex items-center justify-center"
-          style={{ background: `${color}1A` }}
+          className="w-12 h-12 shrink-0 rounded-xl flex items-center justify-center"
+          style={{ background: `${color}20` }}
         >
           <Icon className="w-6 h-6" style={{ color }} />
         </div>
@@ -47,7 +46,7 @@ export default function Dashboard() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const isDark = theme === "dark";
-  const isAdmin = user?.role === 1;
+  const isAdmin = user?.role === 1 || user?.role === 3;
 
   const pageBg = isDark ? "bg-[#3e2723]" : "bg-[#f5f1e8]";
   const text = isDark ? "text-[#f8f5ef]" : "text-[#3e2723]";
@@ -156,7 +155,7 @@ export default function Dashboard() {
     <div className={`p-4 min-h-screen ${pageBg} ${text} heritage-page-root`}>
       {/* HEADER STRIP */}
       <div
-        className={`rounded-lg p-5 mb-6 border ${border}
+        className={`rounded-xl p-4 sm:p-5 mb-6 border ${border}
         bg-gradient-to-r from-[#5d4037]/15 via-[#d4af37]/12 to-[#556b2f]/10 heritage-panel heritage-panel--accent`}
       >
         <div className="flex items-center gap-3">
@@ -181,14 +180,14 @@ export default function Dashboard() {
       </div>
 
       {/* STATS CARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6 heritage-panel heritage-panel--grid">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 mb-6 heritage-panel heritage-panel--grid">
         {cards.map((c) => (
           <StatCard key={c.title} {...c} isDark={isDark} />
         ))}
       </div>
 
       {/* RECENT ACTIVITY */}
-      <div className={`rounded-lg shadow-sm p-5 border ${border} ${card} heritage-panel`}>
+      <div className={`rounded-xl shadow-md p-4 sm:p-6 border ${border} ${card} heritage-panel overflow-hidden`}>
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-xl font-semibold">{t("recent_activity", "Recent Activity")}</h3>
           <button

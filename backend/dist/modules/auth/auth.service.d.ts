@@ -11,18 +11,28 @@ export declare class AuthService {
     login(user: any): Promise<{
         token: string;
         refreshToken: string;
-        user: import("../../models/User").User;
+        user: any;
     }>;
     signup(data: any): Promise<{
         token: string;
         refreshToken: string;
-        user: import("../../models/User").User;
+        user: any;
     }>;
     refreshToken(token: string): Promise<{
         token: string;
         refreshToken: string;
     }>;
     logout(userId: number): Promise<{
+        message: string;
+    }>;
+    requestReset(email: string): Promise<{
+        message: string;
+        code?: undefined;
+    } | {
+        message: string;
+        code: string;
+    }>;
+    verifyReset(email: string, code: string, newPassword: string): Promise<{
         message: string;
     }>;
 }

@@ -1,5 +1,35 @@
 import { api } from "./client";
 
+/** Normalize tree from API (snake_case → camelCase, add hasGedcom, gedcomUrl, owner) */
+export const normalizeTree = (tree, options?: { apiRoot?: string; isPublic?: boolean }) => {
+  if (!tree) return tree;
+  const baseUrl = options?.apiRoot ?? "";
+  const isPublic = options?.isPublic ?? (tree.is_public ?? tree.isPublic ?? false);
+  const ownerRaw = tree.owner ?? tree.owner_name ?? "";
+  const owner =
+    ownerRaw && typeof ownerRaw === "object"
+      ? ownerRaw.full_name ?? ownerRaw.fullName ?? ownerRaw.email ?? ""
+      : ownerRaw ?? "";
+  const hasGedcom = !!(tree.gedcom_path ?? tree.gedcomPath);
+  const gedcomPath = hasGedcom
+    ? (isPublic ? `/api/trees/${tree.id}/gedcom` : `/api/my/trees/${tree.id}/gedcom`)
+    : null;
+  const gedcomUrl = gedcomPath ? (baseUrl ? `${baseUrl}${gedcomPath}` : gedcomPath) : null;
+  return {
+    ...tree,
+    id: tree.id,
+    title: tree.title ?? "",
+    description: tree.description ?? "",
+    archiveSource: tree.archive_source ?? tree.archiveSource ?? "",
+    documentCode: tree.document_code ?? tree.documentCode ?? "",
+    isPublic: !!isPublic,
+    hasGedcom,
+    gedcomUrl,
+    owner,
+    createdAt: tree.created_at ?? tree.createdAt,
+  };
+};
+
 export const getApiRoot = () => {
   const base = String(api.defaults.baseURL || "");
   return base.replace(/\/api\/?$/, "");
